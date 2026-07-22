@@ -1,0 +1,31 @@
+diff --git a/temp/libcamera/APKBUILD b/temp/libcamera/APKBUILD
+index d6d2a78..23e9193 100644
+--- a/temp/libcamera/APKBUILD
++++ b/temp/libcamera/APKBUILD
+@@ -3,7 +3,7 @@ maintainer="Robert Mader <robert.mader@collabora.com>"
+ pkgname=libcamera
+ _pkgver=0.7.2
+ pkgver=9999$_pkgver
+-pkgrel=1
++pkgrel=2
+ pkgdesc="Linux camera framework"
+ url="https://libcamera.org/"
+ arch="all"
+@@ -59,6 +59,8 @@ _tuning_files="
+ source="https://gitlab.freedesktop.org/camera/libcamera/-/archive/v$_pkgver/libcamera-v$_pkgver.tar.gz
+ 	0001-libcamera-simple-Enable-softISP-for-the-Pinephone.patch
+ 	0002-libcamera-simple-Skip-hwISP-formats-if-swISP-is-acti.patch
++	0003-libipa-Add-OV13B10-camera-sensor-helper.patch
++	0004-libcamera-sensor-Add-OV13B10-sensor-properties.patch
+ 	qcam.desktop
+ 	$_tuning_files
+ 	"
+@@ -174,6 +176,8 @@ sha512sums="
+ b317cdc96f61682ee0bf26dfb7c4d6441db9a9c5b93ab53528121a8cd44862b3d59cbaa3881bb0837e3e381564c184c7b742124aef4267eea754c6083de353c1  libcamera-v0.7.2.tar.gz
+ eef5e38efc874f2049d17f08b04d9f21c3e4616f66873358cd2c446e651f78d6952ae25ee13a6ef917e3f85bc7b6a6991152e42c8efd8c7f5bff69829a518826  0001-libcamera-simple-Enable-softISP-for-the-Pinephone.patch
+ 191dfa09cfd08bcdf0d0d07410d17af590cf78b8bc8f8b7587fd2dc1c645a9ca07f2926b5d98381c011319b1f4e1d6195dd0d6dba65fd8c723882e6be0d6117d  0002-libcamera-simple-Skip-hwISP-formats-if-swISP-is-acti.patch
++6e80d8435b99f312a5e1955d222e56735e68a1aabee80739296e6a6129087bf1721ca4b13955b2d4696fa233fa288120071fd2e19c05e6382e2e529411e92fe8  0003-libipa-Add-OV13B10-camera-sensor-helper.patch
++cd49bb1a5b3dab05d137559f6aec33ac706851219bd1a5ba7560c295d3c4cd070ca78cf0a18c91469283dbe4d233c9471b3a1d14be45914b774ee91b34255264  0004-libcamera-sensor-Add-OV13B10-sensor-properties.patch
+ 22167a4eceb6d1b40b0b7c45fdf116c71684f5340de7f767535cb8e160ad9d2ae0f00cb3d461f73a344520a48a4641cf46226841d78bee06bfbfd2a91337f754  qcam.desktop
+ 2ee566653b17d565d2c0de67cbe6ebad25df5aac6051cad78e6bae52016fa2ca0247e964d735ac776b3e0bd447ead9c4fcb26cd7629228cdba3ceb91b46f378f  hi846.yaml
+ 55dab9dcb9b1982143b9d63e4e51138c5bffd7c8f4a8e4e122750b3ad9d475446956bc297d9f564819ade4be75a575d06633a064e14f8ba3ef77986783c5f067  imx355.yaml

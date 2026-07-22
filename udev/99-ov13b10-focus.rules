@@ -1,0 +1,4 @@
+# FP6 ultra-wide (OV13B10) DW9714/AW86017 VCM: libcamera's software ISP has no
+# autofocus, so pin a fixed focus (~arm's length, good for QR/documents) whenever
+# the lens subdev appears. dw9714 retains this and re-applies it on power resume.
+SUBSYSTEM=="video4linux", KERNEL=="v4l-subdev*", ATTR{name}=="dw9714*", ACTION=="add", RUN+="/usr/bin/v4l2-ctl -d /dev/%k --set-ctrl focus_absolute=300"

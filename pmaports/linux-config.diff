@@ -1,0 +1,22 @@
+diff --git a/device/testing/linux-postmarketos-qcom-milos/config-postmarketos-qcom-milos.aarch64 b/device/testing/linux-postmarketos-qcom-milos/config-postmarketos-qcom-milos.aarch64
+index fb9650c..f1a7c5f 100644
+--- a/device/testing/linux-postmarketos-qcom-milos/config-postmarketos-qcom-milos.aarch64
++++ b/device/testing/linux-postmarketos-qcom-milos/config-postmarketos-qcom-milos.aarch64
+@@ -3806,7 +3806,7 @@ CONFIG_VIDEO_CAMERA_SENSOR=y
+ # CONFIG_VIDEO_OV08D10 is not set
+ # CONFIG_VIDEO_OV08X40 is not set
+ # CONFIG_VIDEO_OV13858 is not set
+-# CONFIG_VIDEO_OV13B10 is not set
++CONFIG_VIDEO_OV13B10=m
+ # CONFIG_VIDEO_OV2640 is not set
+ # CONFIG_VIDEO_OV2659 is not set
+ # CONFIG_VIDEO_OV2680 is not set
+@@ -3858,7 +3858,7 @@ CONFIG_VIDEO_CAMERA_SENSOR=y
+ CONFIG_VIDEO_CAMERA_LENS=y
+ # CONFIG_VIDEO_AD5820 is not set
+ # CONFIG_VIDEO_AK7375 is not set
+-# CONFIG_VIDEO_DW9714 is not set
++CONFIG_VIDEO_DW9714=m
+ # CONFIG_VIDEO_DW9719 is not set
+ # CONFIG_VIDEO_DW9768 is not set
+ # CONFIG_VIDEO_DW9807_VCM is not set

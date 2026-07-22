@@ -1,0 +1,135 @@
+From 150ab262b798990c35d754773b764e0da5fb5ce7 Mon Sep 17 00:00:00 2001
+From: nondescriptpointer <public@nondescriptpointer.com>
+Date: Tue, 21 Jul 2026 16:36:01 +0000
+Subject: [PATCH 5/5] media: ov13b10: OF match, selection API, disable broken
+ binned modes
+
+Add an OF device-id table so the driver probes from DT (it was ACPI-only),
+implement the V4L2 selection API (crop/native rectangles) that libcamera
+needs, and disable the 2x2-binned modes (2080x1170, 2104x1560) which
+produce garbled geometry on the milos CAMSS path.
+---
+ drivers/media/i2c/ov13b10.c | 77 +++++++++++++++++++++++++------------
+ 1 file changed, 53 insertions(+), 24 deletions(-)
+
+diff --git a/drivers/media/i2c/ov13b10.c b/drivers/media/i2c/ov13b10.c
+index 542187473..5ffbc74ad 100644
+--- a/drivers/media/i2c/ov13b10.c
++++ b/drivers/media/i2c/ov13b10.c
+@@ -64,6 +64,19 @@
+ #define OV13B10_DGTL_GAIN_H_SHIFT	10
+ #define OV13B10_DGTL_GAIN_H_MASK	0x3
+ 
++/*
++ * Sensor pixel-array geometry. The OV13B10 has a 4224x3136 native array;
++ * the 4208x3120 active area used by the readout modes is centred in it
++ * (8px margin on each edge). Reported through the V4L2 selection API so
++ * userspace (e.g. libcamera) can retrieve the real crop/pixel-array.
++ */
++#define OV13B10_NATIVE_WIDTH		4224
++#define OV13B10_NATIVE_HEIGHT		3136
++#define OV13B10_PIXEL_ARRAY_LEFT	8
++#define OV13B10_PIXEL_ARRAY_TOP		8
++#define OV13B10_PIXEL_ARRAY_WIDTH	4208
++#define OV13B10_PIXEL_ARRAY_HEIGHT	3120
++
+ /* Test Pattern Control */
+ #define OV13B10_REG_TEST_PATTERN	0x5080
+ #define OV13B10_TEST_PATTERN_ENABLE	BIT(7)
+@@ -644,30 +657,14 @@ static const struct ov13b10_mode supported_4_lanes_modes[] = {
+ 		},
+ 		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+ 	},
+-	{
+-		.width = 2104,
+-		.height = 1560,
+-		.vts_def = OV13B10_VTS_60FPS,
+-		.vts_min = OV13B10_VTS_60FPS,
+-		.ppl = 4704,
+-		.reg_list = {
+-			.num_of_regs = ARRAY_SIZE(mode_2104x1560_regs),
+-			.regs = mode_2104x1560_regs,
+-		},
+-		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+-	},
+-	{
+-		.width = 2080,
+-		.height = 1170,
+-		.vts_def = OV13B10_VTS_60FPS,
+-		.vts_min = OV13B10_VTS_60FPS,
+-		.ppl = 4704,
+-		.reg_list = {
+-			.num_of_regs = ARRAY_SIZE(mode_2080x1170_regs),
+-			.regs = mode_2080x1170_regs,
+-		},
+-		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+-	},
++	/*
++	 * The 2x2-binned half-resolution modes (2104x1560, 2080x1170) produce
++	 * garbled/sheared output on the milos CAMSS (CSID/CSIPHY/TFE) path - the
++	 * binned readout geometry does not match the declared frame size. They
++	 * are disabled so libcamera only ever selects working modes (full-res,
++	 * 4160x2340 and the 1364x768 mode all verified clean). Re-enable once the
++	 * binned-mode register lists / CSID handling are fixed.
++	 */
+ 	{
+ 		.width = 1364,
+ 		.height = 768,
+@@ -1334,10 +1331,35 @@ static const struct v4l2_subdev_video_ops ov13b10_video_ops = {
+ 	.s_stream = ov13b10_set_stream,
+ };
+ 
++static int ov13b10_get_selection(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_selection *sel)
++{
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.left = OV13B10_PIXEL_ARRAY_LEFT;
++		sel->r.top = OV13B10_PIXEL_ARRAY_TOP;
++		sel->r.width = OV13B10_PIXEL_ARRAY_WIDTH;
++		sel->r.height = OV13B10_PIXEL_ARRAY_HEIGHT;
++		return 0;
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = OV13B10_NATIVE_WIDTH;
++		sel->r.height = OV13B10_NATIVE_HEIGHT;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
+ 	.enum_mbus_code = ov13b10_enum_mbus_code,
+ 	.get_fmt = ov13b10_get_pad_format,
+ 	.set_fmt = ov13b10_set_pad_format,
++	.get_selection = ov13b10_get_selection,
+ 	.enum_frame_size = ov13b10_enum_frame_size,
+ };
+ 
+@@ -1700,11 +1722,18 @@ static const struct acpi_device_id ov13b10_acpi_ids[] = {
+ MODULE_DEVICE_TABLE(acpi, ov13b10_acpi_ids);
+ #endif
+ 
++static const struct of_device_id ov13b10_of_match[] = {
++	{ .compatible = "ovti,ov13b10" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13b10_of_match);
++
+ static struct i2c_driver ov13b10_i2c_driver = {
+ 	.driver = {
+ 		.name = "ov13b10",
+ 		.pm = pm_ptr(&ov13b10_pm_ops),
+ 		.acpi_match_table = ACPI_PTR(ov13b10_acpi_ids),
++		.of_match_table = ov13b10_of_match,
+ 	},
+ 	.probe = ov13b10_probe,
+ 	.remove = ov13b10_remove,
+-- 
+2.55.0
+
