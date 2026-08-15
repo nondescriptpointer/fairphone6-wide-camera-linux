@@ -8,7 +8,7 @@ software ISP, auto-exposure/AWB, gstreamer + PipeWire, the GNOME **Camera/Snapsh
 autofocus hardware, upright orientation.
 
 > ⚠️ **Experimental.** Targets one device + one kernel revision (below). Only the ultra-wide
-> works; no true autofocus; preview FOV is cropped. See **Limitations**. Read [this](https://nondescriptpointer.com/articles/fairphone-6-wide-camera-linux/) for the
+> works and there is no true autofocus. See **Limitations**. Read [this](https://nondescriptpointer.com/articles/fairphone-6-wide-camera-linux/) for the
 > full story of how this was built.
 
 ## Target revisions (reproducibility)
@@ -33,14 +33,12 @@ scripts/    capture / focus / helper tools
 
 **kernel/** (apply in order onto `v7.1.2-milos`):
 1. `TFE665 (VFE) support` — the ISP driver (vfe-665), adapted from the QCM2290 Spectra 340/vfe-340 implementation. Contains the
-   key fix: 128-bit RDI `rdi_width` → packer `0x0` (not `PLAIN64`), which is what made frames
-   contain real pixels instead of zeros.
+   key fixes for the 128-bit RDI path: packer `0x0` (not `PLAIN64`) and 16-byte stride alignment.
 2. `CSIPHY v2.2.1 lane config` — D-PHY lane sequence + datarate/AFE tuning for milos.
 3. `milos resources + compatible` — camss core: 4 CSIPHY / 3 CSID / 3 TFE, clocks (incl. the
    essential `soc_ahb`), interconnects, `qcom,milos-camss`.
-4. `ov13b10: OF match, selection API, supplies, drop broken modes` — DT probing, the crop/
-   native rectangles libcamera needs, full dovdd/avdd/dvdd rail management, and removal of the
-   two broken 2×2-binned modes.
+4. `ov13b10: OF match, selection API and supplies` — DT probing, the crop/native rectangles
+   libcamera needs, and full dovdd/avdd/dvdd rail management.
 5. `dts: CAMSS + FP6 ultra-wide camera` — `camss@ac13000`, the OV13B10 node, the focus VCM +
    `lens-focus`, orientation/rotation.
 
@@ -109,8 +107,6 @@ Then open GNOME **Camera**: upright, auto-exposed preview; close-up QR crisp.
 - Only the **ultra-wide (OV13B10)** works; main (IMX896) and front (S5KKD1) have no mainline
   drivers.
 - **No true autofocus** — libcamera's software ISP has no AF loop; focus is a fixed position (udev default is 300; retune with `scripts/set-focus.sh`).
-- **Preview FOV is cropped** — the 2×2-binned sensor modes are broken on this path and disabled,
-  so the software ISP crops (doesn't scale) a larger mode → a zoomed 1080p preview.
 - Software-only ISP (GPU-assisted debayer; no hardware ISP tuning).
 - The AF actuator part number is unconfirmed (see above) — driven via the DW9714 protocol.
 

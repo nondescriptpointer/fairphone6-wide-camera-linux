@@ -1,4 +1,4 @@
-From a8987a1c2c07801d3bd0a40c6bfb10c0b5e195e7 Mon Sep 17 00:00:00 2001
+From 2c94a5d90fa5424470ece13ca6b4187d4322e3f9 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 2/5] media: qcom: camss: add CSIPHY v2.2.1 (milos) lane config
@@ -187,14 +187,14 @@ index 415483274..2bc2552b5 100644
  		case CSIPHY_SKEW_CAL:
  			/* TODO: support application of skew from dt flag */
  			continue;
-@@ -1010,6 +1166,7 @@ static bool csiphy_is_gen2(u32 version)
- 
- 	switch (version) {
+@@ -1012,6 +1168,7 @@ static bool csiphy_is_gen2(u32 version)
  	case CAMSS_2290:
  	case CAMSS_6150:
  	case CAMSS_7280:
 +	case CAMSS_7635:
  	case CAMSS_8250:
+ 	case CAMSS_8280XP:
+ 	case CAMSS_8300:
 @@ -1105,6 +1262,11 @@ static int csiphy_init(struct csiphy_device *csiphy)
  		regs->lane_regs = &lane_regs_qcm2290[0];
  		regs->lane_array_size = ARRAY_SIZE(lane_regs_qcm2290);

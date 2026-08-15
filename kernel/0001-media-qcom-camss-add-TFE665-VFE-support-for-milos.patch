@@ -1,4 +1,4 @@
-From 7906b57dac0495e320555182d9af7bf24f7aa071 Mon Sep 17 00:00:00 2001
+From b4ec17aa4b9be8173797454085d3f6b1aad98a60 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 1/5] media: qcom: camss: add TFE665 (VFE) support for milos
@@ -14,28 +14,33 @@ The downstream cam_tfe665.h table places TOP at 0x1800 and BUS at
 for 128-bit RDI, rather than 0xa for 64-bit RDI. Using 0xa on TFE665
 resulted in a bus configuration violation and all-zero frames.
 
+TFE665 also writes RDI rows on a 16-byte boundary. Select the existing
+16-byte bytesperline alignment for CAMSS_7635 so widths whose packed
+RAW10 size is not naturally aligned advertise the stride written by
+the hardware.
+
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/Makefile    |   1 +
  .../media/platform/qcom/camss/camss-vfe-665.c | 321 ++++++++++++++++++
- drivers/media/platform/qcom/camss/camss-vfe.c |   1 +
+ drivers/media/platform/qcom/camss/camss-vfe.c |   2 +
  drivers/media/platform/qcom/camss/camss-vfe.h |   1 +
  drivers/media/platform/qcom/camss/camss.h     |   1 +
- 5 files changed, 325 insertions(+)
+ 5 files changed, 326 insertions(+)
  create mode 100644 drivers/media/platform/qcom/camss/camss-vfe-665.c
 
 diff --git a/drivers/media/platform/qcom/camss/Makefile b/drivers/media/platform/qcom/camss/Makefile
 index 5e349b491..f18b11e5e 100644
 --- a/drivers/media/platform/qcom/camss/Makefile
 +++ b/drivers/media/platform/qcom/camss/Makefile
-@@ -19,6 +19,7 @@ qcom-camss-objs += \
- 		camss-vfe-4-8.o \
+@@ -20,6 +20,7 @@ qcom-camss-objs += \
  		camss-vfe-17x.o \
  		camss-vfe-340.o \
  		camss-vfe-480.o \
 +		camss-vfe-665.o \
  		camss-vfe-680.o \
  		camss-vfe-gen3.o \
+ 		camss-vfe-gen1.o \
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe-665.c b/drivers/media/platform/qcom/camss/camss-vfe-665.c
 new file mode 100644
 index 000000000..5ea6ae62f
@@ -364,41 +369,49 @@ index 000000000..5ea6ae62f
 +	.reg_update_clear = vfe_reg_update_clear,
 +};
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe.c b/drivers/media/platform/qcom/camss/camss-vfe.c
-index 5baf0e3d4..6eb54f96e 100644
+index 5baf0e3d4..4740c53bf 100644
 --- a/drivers/media/platform/qcom/camss/camss-vfe.c
 +++ b/drivers/media/platform/qcom/camss/camss-vfe.c
-@@ -342,6 +342,7 @@ static u32 vfe_src_pad_code(struct vfe_line *line, u32 sink_code,
- 		break;
- 	case CAMSS_660:
+@@ -344,6 +344,7 @@ static u32 vfe_src_pad_code(struct vfe_line *line, u32 sink_code,
  	case CAMSS_2290:
  	case CAMSS_6150:
  	case CAMSS_7280:
 +	case CAMSS_7635:
  	case CAMSS_8x96:
+ 	case CAMSS_8250:
+ 	case CAMSS_8280XP:
+@@ -2004,6 +2005,7 @@ static int vfe_bpl_align(struct vfe_device *vfe)
+ 	switch (vfe->camss->res->version) {
+ 	case CAMSS_6150:
+ 	case CAMSS_7280:
++	case CAMSS_7635:
+ 	case CAMSS_8250:
+ 	case CAMSS_8280XP:
+ 	case CAMSS_8300:
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe.h b/drivers/media/platform/qcom/camss/camss-vfe.h
 index ae9dad353..7dff2ec24 100644
 --- a/drivers/media/platform/qcom/camss/camss-vfe.h
 +++ b/drivers/media/platform/qcom/camss/camss-vfe.h
-@@ -246,6 +246,7 @@ extern const struct vfe_hw_ops vfe_ops_4_7;
- extern const struct vfe_hw_ops vfe_ops_4_8;
+@@ -247,6 +247,7 @@ extern const struct vfe_hw_ops vfe_ops_4_8;
  extern const struct vfe_hw_ops vfe_ops_170;
  extern const struct vfe_hw_ops vfe_ops_340;
  extern const struct vfe_hw_ops vfe_ops_480;
 +extern const struct vfe_hw_ops vfe_ops_665;
  extern const struct vfe_hw_ops vfe_ops_680;
  extern const struct vfe_hw_ops vfe_ops_gen3;
+ 
 diff --git a/drivers/media/platform/qcom/camss/camss.h b/drivers/media/platform/qcom/camss/camss.h
 index 6d048414c..bd0b6194b 100644
 --- a/drivers/media/platform/qcom/camss/camss.h
 +++ b/drivers/media/platform/qcom/camss/camss.h
-@@ -80,6 +80,7 @@ enum pm_domain {
- enum camss_version {
- 	CAMSS_660,
+@@ -82,6 +82,7 @@ enum camss_version {
  	CAMSS_2290,
  	CAMSS_6150,
  	CAMSS_7280,
 +	CAMSS_7635,
  	CAMSS_8x16,
+ 	CAMSS_8x39,
+ 	CAMSS_8x53,
 -- 
 2.55.0
 
