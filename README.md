@@ -23,7 +23,7 @@ autofocus hardware, upright orientation.
 
 ```
 kernel/     5 git-format-patch commits against v7.1.2-milos
-libcamera/  2 patches against libcamera v0.7.2 (sensor helper + properties)
+libcamera/  2 sensor-support patches against libcamera v0.7.2
 pmaports/   diffs for the kernel config and the libcamera APKBUILD
 udev/       fixed-focus rule
 scripts/    capture / focus / helper tools
@@ -59,7 +59,8 @@ All of these were first derived empirically, then confirmed against the public F
 **On the VCM part number:** it is *not* publicly documented. The board schematic only routes AFVDD/AF_GND and the shared I²C bus into the camera module (the actuator IC is inside the module), the vendor DT uses a generic `qcom,actuator` node, and the module EEPROM stores only numeric vendor IDs. What *is* established: the device at 0x0c responds to the DW9714 10-bit direct-DAC protocol and focus works. The DT therefore uses `dongwoon,dw9714` and says so.
 
 **libcamera/** (add to the pmaports `temp/libcamera` APKBUILD *after* its existing 0001/0002):
-- `0003` — OV13B10 sensor helper (`gain = code/128`) → enables software auto-exposure/AWB.
+- `0003` — OV13B10 sensor helper (`gain = code/128`) → enables calibrated software
+  auto-exposure/AWB.
 - `0004` — OV13B10 sensor properties (unit cell, test-pattern map).
 
 ## Build & install
@@ -80,7 +81,7 @@ Install the kernel image/dtb the way your device expects (on FP6/pmOS: rebuild t
 ```sh
 cd pmaports/temp/libcamera
 cp /path/to/fp6-mainline-camera/libcamera/000{3,4}-*.patch .
-# add both to source= and sha512sums in the APKBUILD (see pmaports/libcamera-APKBUILD.diff),
+# Add the patches to the APKBUILD (see pmaports/libcamera-APKBUILD.diff),
 # bump pkgrel, then:
 abuild -r
 ```
@@ -107,8 +108,15 @@ Then open GNOME **Camera**: upright, auto-exposed preview; close-up QR crisp.
 - Only the **ultra-wide (OV13B10)** works; main (IMX896) and front (S5KKD1) have no mainline
   drivers.
 - **No true autofocus** — libcamera's software ISP has no AF loop; focus is a fixed position (udev default is 300; retune with `scripts/set-focus.sh`).
-- Software-only ISP (GPU-assisted debayer; no hardware ISP tuning).
-- The AF actuator part number is unconfirmed (see above) — driven via the DW9714 protocol.
+- Software-only ISP (GPU-assisted debayer; no hardware ISP tone mapping, denoise,
+  sharpening, lens-shading correction, or HDR).
+- For a 1920×1080 processed stream, libcamera's simple pipeline chooses the smallest
+  sufficient sensor mode: 2080×1170 at 60 fps. This **limits exposure to about 16.7 ms** even
+  when a client only needs 30 fps. The proper 4160×2340 30 fps mode remains available, but
+  selecting it currently requires requesting a processed size larger than the 60 fps modes.
+  **Mode-selection policy should be improved** without hiding valid sensor modes. Increasing
+  only the 1364×768 mode's VTS to 30 fps was tested and produced black frames.
+- The **AF actuator part number is unconfirmed** (see above) — driven via the DW9714 protocol.
 
 ## Upstreaming (help welcome)
 - **libcamera** sensor helper/properties
