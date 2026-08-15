@@ -1,6 +1,6 @@
-From a3b2cb4524f898c52a20b2a488cd705cc03910ae Mon Sep 17 00:00:00 2001
+From 7906b57dac0495e320555182d9af7bf24f7aa071 Mon Sep 17 00:00:00 2001
 From: nondescriptpointer <public@nondescriptpointer.com>
-Date: Tue, 21 Jul 2026 16:36:00 +0000
+Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 1/5] media: qcom: camss: add TFE665 (VFE) support for milos
 
 Add a vfe-665 op set for the TFE665 ISP found on the Qualcomm milos

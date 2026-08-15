@@ -1,44 +1,48 @@
-From cb3e0d916d31fb0f2b5b4b55e9bd3ee4f3b823de Mon Sep 17 00:00:00 2001
+From e2530e9855398ee86d54bbc096e6e95a0c54ed51 Mon Sep 17 00:00:00 2001
 From: nondescriptpointer <public@nondescriptpointer.com>
-Date: Tue, 21 Jul 2026 16:36:01 +0000
-Subject: [PATCH 4/5] arm64: dts: qcom: milos: add CAMSS and FP6 ultra-wide
+Date: Mon, 10 Aug 2026 22:37:17 +0200
+Subject: [PATCH 5/5] arm64: dts: qcom: milos: add CAMSS and FP6 ultra-wide
  camera
 
 Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
-GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi, and on the
-Fairphone 6 enable the OV13B10 ultra-wide sensor at cci0_i2c1 (CSIPHY1,
-data-lanes <0 1 2 3>, MCLK1 19.2 MHz, 560 MHz link freq), its DW9714/
-AW86017 focus VCM at 0x0c with lens-focus link, plus orientation and
-rotation.
+GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi.
+
+On the Fairphone 6 enable the OV13B10 ultra-wide sensor and its focus
+VCM. Pin assignments are taken from the FP6 schematics: the sensor sits
+on CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
+CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
+and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
+AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
 ---
  .../boot/dts/qcom/milos-fairphone-fp6.dts     |  62 +++++++-
  arch/arm64/boot/dts/qcom/milos.dtsi           | 142 ++++++++++++++++++
  2 files changed, 202 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index e5944a1b2..4b94b0277 100644
+index e5944a1b2..de438e754 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-@@ -119,6 +119,8 @@ vreg_uw_dvdd: regulator-uw-dvdd {
- 		regulator-min-microvolt = <1200000>;
+@@ -120,6 +120,7 @@ vreg_uw_dvdd: regulator-uw-dvdd {
  		regulator-max-microvolt = <1200000>;
  		startup-delay-us = <100>;
-+		/* vdig for the OV13B10; driver can't manage it, keep it on */
-+		regulator-always-on;
  
++		/* UW_DVDD_EN */
  		gpio = <&tlmm 28 GPIO_ACTIVE_HIGH>;
  		enable-active-high;
-@@ -651,8 +653,17 @@ eeprom@50 {
+ 
+@@ -651,8 +652,19 @@ eeprom@50 {
  
  
  &cci0_i2c1 {
 -	/* Awinic AW86017 VCM @ 0x0c */
 -	/* UW cam: OmniVision OV13B10 @ 0x36 */
 +	/*
-+	 * Ultra-wide focus actuator: Awinic AW86017 VCM @ 0x0c. It is
-+	 * driven with the Dongwoon DW9714-compatible 10-bit direct-DAC
-+	 * protocol (2-byte write), which the mainline dw9714 driver speaks;
-+	 * good enough for basic focus control. VDD is the 2.8V AF rail.
++	 * Ultra-wide focus actuator (VCM) @ 0x0c. The exact part is not
++	 * documented: the board schematic only routes AFVDD/AF_GND and the
++	 * shared CCI I2C bus into the camera module, and the vendor DT uses
++	 * a generic "qcom,actuator" node. The device does respond to the
++	 * DW9714 10-bit direct-DAC protocol (single 2-byte write), which is
++	 * what the mainline dw9714 driver speaks, and focus control works.
 +	 */
 +	ov13b10_vcm: focus@c {
 +		compatible = "dongwoon,dw9714";
@@ -48,7 +52,7 @@ index e5944a1b2..4b94b0277 100644
  
  	eeprom@52 {
  		compatible = "puya,p24c128f", "atmel,24c128";
-@@ -660,6 +671,49 @@ eeprom@52 {
+@@ -660,6 +672,50 @@ eeprom@52 {
  		vcc-supply = <&vreg_l6p>;
  		read-only;
  	};
@@ -65,12 +69,13 @@ index e5944a1b2..4b94b0277 100644
 +		assigned-clock-rates = <19200000>;
 +
 +		/*
-+		 * OV13B10 rails (pm8008): vana 2.8V = vreg_l4p (driver-managed
-+		 * as "avdd"), vio 1.8V = vreg_l6p (always on, shared w/ eeprom),
-+		 * vdig 1.2V = vreg_uw_dvdd (forced always-on below since the
-+		 * mainline driver only manages a single regulator).
++		 * Per the FP6 schematic: AVDD 2.8V from VREG_L4P_2P8, IOVDD
++		 * 1.8V from VREG_L6P_1P8 (shared with the module EEPROM), and
++		 * DVDD 1.2V from an on-board LDO gated by GPIO 28.
 +		 */
 +		avdd-supply = <&vreg_l4p>;
++		dovdd-supply = <&vreg_l6p>;
++		dvdd-supply = <&vreg_uw_dvdd>;
 +
 +		reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
 +		pinctrl-names = "default";
@@ -98,24 +103,22 @@ index e5944a1b2..4b94b0277 100644
  };
  
  &cci1 {
-@@ -790,6 +844,8 @@ vreg_l4p: ldo4 {
+@@ -787,6 +843,7 @@ vreg_l3p: ldo3 {
+ 			};
+ 
+ 			vreg_l4p: ldo4 {
++				/* Camera AVDD (OV13B10 "avdd") */
  				regulator-name = "vreg_l4p";
  				regulator-min-microvolt = <2700000>;
  				regulator-max-microvolt = <2900000>;
-+				/* OV13B10 vana; keep on for bring-up */
-+				regulator-always-on;
+@@ -799,6 +856,7 @@ vreg_l5p: ldo5 {
  			};
  
- 			vreg_l5p: ldo5 {
-@@ -802,6 +858,8 @@ vreg_l6p: ldo6 {
+ 			vreg_l6p: ldo6 {
++				/* Camera IOVDD (OV13B10 "dovdd", module EEPROM vcc) */
  				regulator-name = "vreg_l6p";
  				regulator-min-microvolt = <1700000>;
  				regulator-max-microvolt = <1896000>;
-+				/* OV13B10 vio (also eeprom vcc); keep on for bring-up */
-+				regulator-always-on;
- 			};
- 
- 			vreg_l7p: ldo7 {
 diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
 index 288e0e658..859d8e977 100644
 --- a/arch/arm64/boot/dts/qcom/milos.dtsi

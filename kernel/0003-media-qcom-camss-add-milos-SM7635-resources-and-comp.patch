@@ -1,6 +1,6 @@
-From 435b68e23b7c4aa44b7978d4639e963361a1b6c9 Mon Sep 17 00:00:00 2001
+From eb9e20a9731c84c79c1456d11e05c690732e7b2a Mon Sep 17 00:00:00 2001
 From: nondescriptpointer <public@nondescriptpointer.com>
-Date: Tue, 21 Jul 2026 16:36:01 +0000
+Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 3/5] media: qcom: camss: add milos (SM7635) resources and
  compatible
 

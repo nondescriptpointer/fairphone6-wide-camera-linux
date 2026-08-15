@@ -1,0 +1,269 @@
+From 12c3e0aff16d5f0965e2661bea87a0d25a9cf830 Mon Sep 17 00:00:00 2001
+From: nondescriptpointer <public@nondescriptpointer.com>
+Date: Mon, 10 Aug 2026 22:37:17 +0200
+Subject: [PATCH 4/5] media: ov13b10: OF match, selection API, supplies, drop
+ broken modes
+
+Several changes needed to use this sensor on a DT/ARM platform:
+
+ - add an OF device-id table so the driver probes from DT (it was
+   ACPI-only),
+ - implement the V4L2 selection API (crop/native rectangles), which
+   libcamera uses to derive the pixel-array geometry,
+ - manage all three power rails (dovdd/avdd/dvdd) via a regulator bulk
+   instead of only an optional avdd,
+ - fix the power-up sequence: hold the sensor in reset while the
+   supplies and the clock come up, and only release it afterwards. The
+   reset GPIO is requested deasserted, so previously the sensor was
+   released while the rails were still ramping. That went unnoticed as
+   long as the rails happened to be always-on, but fails once they are
+   powered on demand (the chip-ID read then returns -EIO),
+ - drop the 2x2-binned modes (2080x1170, 2104x1560), whose readout
+   geometry does not match the advertised frame size and which produce
+   garbled frames on the milos CAMSS path.
+---
+ drivers/media/i2c/ov13b10.c | 139 ++++++++++++++++++++++++------------
+ 1 file changed, 94 insertions(+), 45 deletions(-)
+
+diff --git a/drivers/media/i2c/ov13b10.c b/drivers/media/i2c/ov13b10.c
+index 542187473..248a24b9b 100644
+--- a/drivers/media/i2c/ov13b10.c
++++ b/drivers/media/i2c/ov13b10.c
+@@ -8,6 +8,7 @@
+ #include <linux/i2c.h>
+ #include <linux/module.h>
+ #include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-device.h>
+ #include <media/v4l2-fwnode.h>
+@@ -64,6 +65,19 @@
+ #define OV13B10_DGTL_GAIN_H_SHIFT	10
+ #define OV13B10_DGTL_GAIN_H_MASK	0x3
+ 
++/*
++ * Sensor pixel-array geometry. The OV13B10 has a 4224x3136 native array;
++ * the 4208x3120 active area used by the readout modes is centred in it
++ * (8px margin on each edge). Reported through the V4L2 selection API so
++ * userspace (e.g. libcamera) can retrieve the real crop/pixel-array.
++ */
++#define OV13B10_NATIVE_WIDTH		4224
++#define OV13B10_NATIVE_HEIGHT		3136
++#define OV13B10_PIXEL_ARRAY_LEFT	8
++#define OV13B10_PIXEL_ARRAY_TOP		8
++#define OV13B10_PIXEL_ARRAY_WIDTH	4208
++#define OV13B10_PIXEL_ARRAY_HEIGHT	3120
++
+ /* Test Pattern Control */
+ #define OV13B10_REG_TEST_PATTERN	0x5080
+ #define OV13B10_TEST_PATTERN_ENABLE	BIT(7)
+@@ -644,30 +658,14 @@ static const struct ov13b10_mode supported_4_lanes_modes[] = {
+ 		},
+ 		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+ 	},
+-	{
+-		.width = 2104,
+-		.height = 1560,
+-		.vts_def = OV13B10_VTS_60FPS,
+-		.vts_min = OV13B10_VTS_60FPS,
+-		.ppl = 4704,
+-		.reg_list = {
+-			.num_of_regs = ARRAY_SIZE(mode_2104x1560_regs),
+-			.regs = mode_2104x1560_regs,
+-		},
+-		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+-	},
+-	{
+-		.width = 2080,
+-		.height = 1170,
+-		.vts_def = OV13B10_VTS_60FPS,
+-		.vts_min = OV13B10_VTS_60FPS,
+-		.ppl = 4704,
+-		.reg_list = {
+-			.num_of_regs = ARRAY_SIZE(mode_2080x1170_regs),
+-			.regs = mode_2080x1170_regs,
+-		},
+-		.link_freq_index = OV13B10_LINK_FREQ_INDEX_0,
+-	},
++	/*
++	 * The 2x2-binned half-resolution modes (2104x1560, 2080x1170) produce
++	 * garbled/sheared output on the milos CAMSS (CSID/CSIPHY/TFE) path - the
++	 * binned readout geometry does not match the declared frame size. They
++	 * are disabled so libcamera only ever selects working modes (full-res,
++	 * 4160x2340 and the 1364x768 mode all verified clean). Re-enable once the
++	 * binned-mode register lists / CSID handling are fixed.
++	 */
+ 	{
+ 		.width = 1364,
+ 		.height = 768,
+@@ -699,6 +697,18 @@ static const struct ov13b10_mode supported_2_lanes_modes[] = {
+ 	},
+ };
+ 
++/*
++ * Supplies in power-up order: the digital I/O rail must be up before the
++ * analog and digital core rails.
++ */
++static const char * const ov13b10_supply_names[] = {
++	"dovdd",	/* Digital I/O power */
++	"avdd",		/* Analog power */
++	"dvdd",		/* Digital core power */
++};
++
++#define OV13B10_NUM_SUPPLIES	ARRAY_SIZE(ov13b10_supply_names)
++
+ struct ov13b10 {
+ 	struct device *dev;
+ 
+@@ -708,7 +718,7 @@ struct ov13b10 {
+ 	struct v4l2_ctrl_handler ctrl_handler;
+ 
+ 	struct clk *img_clk;
+-	struct regulator *avdd;
++	struct regulator_bulk_data supplies[OV13B10_NUM_SUPPLIES];
+ 	struct gpio_desc *reset;
+ 
+ 	/* V4L2 Controls */
+@@ -1195,11 +1205,10 @@ static int ov13b10_power_off(struct device *dev)
+ 
+ 	gpiod_set_value_cansleep(ov13b10->reset, 1);
+ 
+-	if (ov13b10->avdd)
+-		regulator_disable(ov13b10->avdd);
+-
+ 	clk_disable_unprepare(ov13b10->img_clk);
+ 
++	regulator_bulk_disable(OV13B10_NUM_SUPPLIES, ov13b10->supplies);
++
+ 	return 0;
+ }
+ 
+@@ -1209,23 +1218,30 @@ static int ov13b10_power_on(struct device *dev)
+ 	struct ov13b10 *ov13b10 = to_ov13b10(sd);
+ 	int ret;
+ 
++	/* Hold the sensor in reset while the supplies and clock come up. */
++	gpiod_set_value_cansleep(ov13b10->reset, 1);
++
++	ret = regulator_bulk_enable(OV13B10_NUM_SUPPLIES, ov13b10->supplies);
++	if (ret < 0) {
++		dev_err(dev, "failed to enable regulators: %d", ret);
++		return ret;
++	}
++
++	/* Let the supplies settle before clocking the sensor. */
++	usleep_range(1000, 1500);
++
+ 	ret = clk_prepare_enable(ov13b10->img_clk);
+ 	if (ret < 0) {
+ 		dev_err(dev, "failed to enable imaging clock: %d", ret);
++		regulator_bulk_disable(OV13B10_NUM_SUPPLIES, ov13b10->supplies);
+ 		return ret;
+ 	}
+ 
+-	if (ov13b10->avdd) {
+-		ret = regulator_enable(ov13b10->avdd);
+-		if (ret < 0) {
+-			dev_err(dev, "failed to enable avdd: %d", ret);
+-			clk_disable_unprepare(ov13b10->img_clk);
+-			return ret;
+-		}
+-	}
++	/* At least 8192 XVCLK cycles are required before releasing reset. */
++	usleep_range(1000, 1500);
+ 
+ 	gpiod_set_value_cansleep(ov13b10->reset, 0);
+-	/* 5ms to wait ready after XSHUTDN assert */
++	/* 5ms to wait ready after XSHUTDN release */
+ 	usleep_range(5000, 5500);
+ 
+ 	return 0;
+@@ -1334,10 +1350,35 @@ static const struct v4l2_subdev_video_ops ov13b10_video_ops = {
+ 	.s_stream = ov13b10_set_stream,
+ };
+ 
++static int ov13b10_get_selection(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_selection *sel)
++{
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.left = OV13B10_PIXEL_ARRAY_LEFT;
++		sel->r.top = OV13B10_PIXEL_ARRAY_TOP;
++		sel->r.width = OV13B10_PIXEL_ARRAY_WIDTH;
++		sel->r.height = OV13B10_PIXEL_ARRAY_HEIGHT;
++		return 0;
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = OV13B10_NATIVE_WIDTH;
++		sel->r.height = OV13B10_NATIVE_HEIGHT;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
+ 	.enum_mbus_code = ov13b10_enum_mbus_code,
+ 	.get_fmt = ov13b10_get_pad_format,
+ 	.set_fmt = ov13b10_set_pad_format,
++	.get_selection = ov13b10_get_selection,
+ 	.enum_frame_size = ov13b10_enum_frame_size,
+ };
+ 
+@@ -1473,6 +1514,7 @@ static void ov13b10_free_controls(struct ov13b10 *ov13b)
+ static int ov13b10_get_pm_resources(struct ov13b10 *ov13b)
+ {
+ 	unsigned long freq;
++	unsigned int i;
+ 	int ret;
+ 
+ 	ov13b->reset = devm_gpiod_get_optional(ov13b->dev, "reset", GPIOD_OUT_LOW);
+@@ -1491,14 +1533,14 @@ static int ov13b10_get_pm_resources(struct ov13b10 *ov13b)
+ 				     "external clock %lu is not supported\n",
+ 				     freq);
+ 
+-	ov13b->avdd = devm_regulator_get_optional(ov13b->dev, "avdd");
+-	if (IS_ERR(ov13b->avdd)) {
+-		ret = PTR_ERR(ov13b->avdd);
+-		ov13b->avdd = NULL;
+-		if (ret != -ENODEV)
+-			return dev_err_probe(ov13b->dev, ret,
+-					     "failed to get avdd regulator\n");
+-	}
++	for (i = 0; i < OV13B10_NUM_SUPPLIES; i++)
++		ov13b->supplies[i].supply = ov13b10_supply_names[i];
++
++	ret = devm_regulator_bulk_get(ov13b->dev, OV13B10_NUM_SUPPLIES,
++				      ov13b->supplies);
++	if (ret)
++		return dev_err_probe(ov13b->dev, ret,
++				     "failed to get regulators\n");
+ 
+ 	return 0;
+ }
+@@ -1700,11 +1742,18 @@ static const struct acpi_device_id ov13b10_acpi_ids[] = {
+ MODULE_DEVICE_TABLE(acpi, ov13b10_acpi_ids);
+ #endif
+ 
++static const struct of_device_id ov13b10_of_match[] = {
++	{ .compatible = "ovti,ov13b10" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13b10_of_match);
++
+ static struct i2c_driver ov13b10_i2c_driver = {
+ 	.driver = {
+ 		.name = "ov13b10",
+ 		.pm = pm_ptr(&ov13b10_pm_ops),
+ 		.acpi_match_table = ACPI_PTR(ov13b10_acpi_ids),
++		.of_match_table = ov13b10_of_match,
+ 	},
+ 	.probe = ov13b10_probe,
+ 	.remove = ov13b10_remove,
+-- 
+2.55.0
+

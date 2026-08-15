@@ -1,6 +1,6 @@
-From 51e0e4c6386bfe9842ffeca1c96f75ecf0d7b98e Mon Sep 17 00:00:00 2001
+From a8987a1c2c07801d3bd0a40c6bfb10c0b5e195e7 Mon Sep 17 00:00:00 2001
 From: nondescriptpointer <public@nondescriptpointer.com>
-Date: Tue, 21 Jul 2026 16:36:00 +0000
+Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 2/5] media: qcom: camss: add CSIPHY v2.2.1 (milos) lane config
 
 Add the D-PHY lane register sequence and ~1.1 Gbps/lane (500 Msps)
