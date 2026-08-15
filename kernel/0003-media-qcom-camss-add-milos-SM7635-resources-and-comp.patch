@@ -1,5 +1,5 @@
 From eb9e20a9731c84c79c1456d11e05c690732e7b2a Mon Sep 17 00:00:00 2001
-From: nondescriptpointer <public@nondescriptpointer.com>
+From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 3/5] media: qcom: camss: add milos (SM7635) resources and
  compatible
@@ -9,13 +9,14 @@ ops), 3 TFE665, their clocks, interconnects and power domains, and add
 the qcom,milos-camss compatible. The soc_ahb clock (CAM_CC_SOC_AHB_CLK)
 gates the register-access AHB bus and is required for the ISP to be
 reachable at all.
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/camss.c | 123 ++++++++++++++++++++++
- drivers/media/platform/qcom/camss/camss.h |   1 +
- 2 files changed, 124 insertions(+)
+ 1 file changed, 123 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
-index 9335636d7..84f2b0565 100644
+index 9335636d7..f21ca1659 100644
 --- a/drivers/media/platform/qcom/camss/camss.c
 +++ b/drivers/media/platform/qcom/camss/camss.c
 @@ -820,6 +820,116 @@ static const struct resources_icc icc_res_2290[] = {
@@ -24,9 +25,9 @@ index 9335636d7..84f2b0565 100644
  
 +/*
 + * Milos (SM7635) resources. Camera front-end is TFE-based (TFE665/CSID665/
-+ * CSIPHY v2.2.1), closely matching the qcm2290 TFE530 generation. CSID665 and
-+ * CSIPHY are register-compatible with qcm2290 (csid_ops_340 / csiphy_ops_3ph_1_0);
-+ * only the TFE bus register base differs, handled by vfe_ops_665.
++ * CSIPHY v2.2.1). For the interfaces used here, CSID665 and CSIPHY reuse the
++ * QCM2290 csid_ops_340 and csiphy_ops_3ph_1_0 implementations. The TFE RDI
++ * path uses vfe_ops_665 for its different BUS offset and packer format.
 + * All clocks come from camcc-milos.
 + */
 +#define MILOS_CSIPHY_RES(n)						\
@@ -140,7 +141,7 @@ index 9335636d7..84f2b0565 100644
  };
  
 +static const struct camss_resources milos_resources = {
-+	.version = CAMSS_MILOS,
++	.version = CAMSS_7635,
 +	.csiphy_res = csiphy_res_milos,
 +	.csid_res = csid_res_milos,
 +	.vfe_res = vfe_res_milos,
@@ -162,18 +163,6 @@ index 9335636d7..84f2b0565 100644
  	{ .compatible = "qcom,qcs8300-camss", .data = &qcs8300_resources },
  	{ .compatible = "qcom,sa8775p-camss", .data = &sa8775p_resources },
  	{ .compatible = "qcom,sc7280-camss", .data = &sc7280_resources },
-diff --git a/drivers/media/platform/qcom/camss/camss.h b/drivers/media/platform/qcom/camss/camss.h
-index 6d048414c..618188ef7 100644
---- a/drivers/media/platform/qcom/camss/camss.h
-+++ b/drivers/media/platform/qcom/camss/camss.h
-@@ -80,6 +80,7 @@ enum pm_domain {
- enum camss_version {
- 	CAMSS_660,
- 	CAMSS_2290,
-+	CAMSS_MILOS,
- 	CAMSS_6150,
- 	CAMSS_7280,
- 	CAMSS_8x16,
 -- 
 2.55.0
 

@@ -1,5 +1,5 @@
 From 12c3e0aff16d5f0965e2661bea87a0d25a9cf830 Mon Sep 17 00:00:00 2001
-From: nondescriptpointer <public@nondescriptpointer.com>
+From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 4/5] media: ov13b10: OF match, selection API, supplies, drop
  broken modes
@@ -21,6 +21,8 @@ Several changes needed to use this sensor on a DT/ARM platform:
  - drop the 2x2-binned modes (2080x1170, 2104x1560), whose readout
    geometry does not match the advertised frame size and which produce
    garbled frames on the milos CAMSS path.
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/i2c/ov13b10.c | 139 ++++++++++++++++++++++++------------
  1 file changed, 94 insertions(+), 45 deletions(-)

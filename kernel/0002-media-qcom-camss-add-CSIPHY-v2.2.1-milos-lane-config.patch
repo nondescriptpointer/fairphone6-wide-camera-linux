@@ -1,5 +1,5 @@
 From a8987a1c2c07801d3bd0a40c6bfb10c0b5e195e7 Mon Sep 17 00:00:00 2001
-From: nondescriptpointer <public@nondescriptpointer.com>
+From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 2/5] media: qcom: camss: add CSIPHY v2.2.1 (milos) lane config
 
@@ -7,12 +7,14 @@ Add the D-PHY lane register sequence and ~1.1 Gbps/lane (500 Msps)
 datarate/AFE tuning for the CSIPHY v2.2.1 revision on milos (register
 window at offset 0x1000), transcribed from the downstream
 cam_csiphy_2_2_1_hwreg.h.
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../qcom/camss/camss-csiphy-3ph-1-0.c         | 162 ++++++++++++++++++
  1 file changed, 162 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
-index 415483274..fcc8ec66b 100644
+index 415483274..2bc2552b5 100644
 --- a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
 +++ b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
 @@ -801,6 +801,159 @@ csiphy_lane_regs lane_regs_x1e80100[] = {
@@ -189,15 +191,15 @@ index 415483274..fcc8ec66b 100644
  
  	switch (version) {
  	case CAMSS_2290:
-+	case CAMSS_MILOS:
  	case CAMSS_6150:
  	case CAMSS_7280:
++	case CAMSS_7635:
  	case CAMSS_8250:
 @@ -1105,6 +1262,11 @@ static int csiphy_init(struct csiphy_device *csiphy)
  		regs->lane_regs = &lane_regs_qcm2290[0];
  		regs->lane_array_size = ARRAY_SIZE(lane_regs_qcm2290);
  		break;
-+	case CAMSS_MILOS:
++	case CAMSS_7635:
 +		regs->lane_regs = &lane_regs_milos[0];
 +		regs->lane_array_size = ARRAY_SIZE(lane_regs_milos);
 +		regs->offset = 0x1000;

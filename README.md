@@ -32,7 +32,7 @@ scripts/    capture / focus / helper tools
 ## What each patch does
 
 **kernel/** (apply in order onto `v7.1.2-milos`):
-1. `TFE665 (VFE) support` — the ISP driver (vfe-665), a TFE530/vfe-340 adaptation. Contains the
+1. `TFE665 (VFE) support` — the ISP driver (vfe-665), adapted from the QCM2290 Spectra 340/vfe-340 implementation. Contains the
    key fix: 128-bit RDI `rdi_width` → packer `0x0` (not `PLAIN64`), which is what made frames
    contain real pixels instead of zeros.
 2. `CSIPHY v2.2.1 lane config` — D-PHY lane sequence + datarate/AFE tuning for milos.

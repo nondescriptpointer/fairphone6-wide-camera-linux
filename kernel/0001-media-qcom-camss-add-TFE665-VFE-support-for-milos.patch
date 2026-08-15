@@ -1,54 +1,50 @@
 From 7906b57dac0495e320555182d9af7bf24f7aa071 Mon Sep 17 00:00:00 2001
-From: nondescriptpointer <public@nondescriptpointer.com>
+From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 1/5] media: qcom: camss: add TFE665 (VFE) support for milos
 
 Add a vfe-665 op set for the TFE665 ISP found on the Qualcomm milos
-(SM7635) SoC. The block is register-compatible with the TFE530 already
-supported as vfe-340 (qcm2290); the differences are the internal block
-base offsets (bus base at 0x1800) and, crucially, the RDI write-master
-packer format: TFE665 has a 128-bit RDI bus and requires packer 0x0
-(PLAIN64/0xa used by the 64-bit TFE530 yields a bus config violation and
-all-zero frames).
+(SM7635) SoC. For the RDI capture path implemented by camss-vfe-340.c,
+TFE665 uses the same TOP reset, IRQ and update register layout and the
+same BUS write-master layout, including RDI clients 7 through 9.
 
-Modelled on camss-vfe-340.c and verified against the downstream
-cam_tfe665.h register map.
+The downstream cam_tfe665.h table places TOP at 0x1800 and BUS at
+0x3000, giving a BUS offset of 0x1800 relative to TOP, and reports a
+128-bit RDI width. Downstream cam_tfe_bus.c selects packer format 0x0
+for 128-bit RDI, rather than 0xa for 64-bit RDI. Using 0xa on TFE665
+resulted in a bus configuration violation and all-zero frames.
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/Makefile    |   1 +
- .../media/platform/qcom/camss/camss-vfe-665.c | 335 ++++++++++++++++++
+ .../media/platform/qcom/camss/camss-vfe-665.c | 321 ++++++++++++++++++
  drivers/media/platform/qcom/camss/camss-vfe.c |   1 +
  drivers/media/platform/qcom/camss/camss-vfe.h |   1 +
- 4 files changed, 338 insertions(+)
+ drivers/media/platform/qcom/camss/camss.h     |   1 +
+ 5 files changed, 325 insertions(+)
  create mode 100644 drivers/media/platform/qcom/camss/camss-vfe-665.c
 
 diff --git a/drivers/media/platform/qcom/camss/Makefile b/drivers/media/platform/qcom/camss/Makefile
-index 5e349b491..e08585b96 100644
+index 5e349b491..f18b11e5e 100644
 --- a/drivers/media/platform/qcom/camss/Makefile
 +++ b/drivers/media/platform/qcom/camss/Makefile
 @@ -19,6 +19,7 @@ qcom-camss-objs += \
  		camss-vfe-4-8.o \
  		camss-vfe-17x.o \
  		camss-vfe-340.o \
-+		camss-vfe-665.o \
  		camss-vfe-480.o \
++		camss-vfe-665.o \
  		camss-vfe-680.o \
  		camss-vfe-gen3.o \
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe-665.c b/drivers/media/platform/qcom/camss/camss-vfe-665.c
 new file mode 100644
-index 000000000..aa3f56d4b
+index 000000000..5ea6ae62f
 --- /dev/null
 +++ b/drivers/media/platform/qcom/camss/camss-vfe-665.c
-@@ -0,0 +1,335 @@
+@@ -0,0 +1,321 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Qualcomm MSM Camera Subsystem - VFE (Video Front End) Module 665 (TFE)
-+ *
-+ * TFE665 as found on the Milos (SM7635) SoC. The register block is layout-
-+ * identical to the TFE530 (VFE 340) block used on qcm2290, except that the
-+ * TOP sub-block sits at +0x1800 (vs +0x1000) and the BUS sub-block sits at
-+ * +0x3000 (vs +0x1A00). Since the driver points vfe->base at the TOP
-+ * sub-block, the only delta from camss-vfe-340.c is the BUS_REG base offset
-+ * (bus_base - top_base = 0x3000 - 0x1800 = 0x1800, vs 0xa00 on TFE530).
 + *
 + * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
 + */
@@ -112,13 +108,6 @@ index 000000000..aa3f56d4b
 +#define TFE_BUS_IMAGE_CFG_2(c)				BUS_REG(0x214 + (c) * 0x100)
 +#define		TFE_BUS_IMAGE_CFG_2_DEFAULT	0xffff
 +#define TFE_BUS_PACKER_CFG(c)				BUS_REG(0x218 + (c) * 0x100)
-+#define		TFE_BUS_PACKER_CFG_FMT_PLAIN64	0xa
-+/*
-+ * TFE665 has a 128-bit RDI bus (rdi_width=128); the RDI packer format for
-+ * MIPI raw dump is 0x0 (vs PLAIN64=0xa used by the 64-bit TFE530/qcm2290).
-+ * Using the wrong value triggers a bus consumer/config violation and the
-+ * write master produces all-zero frames.
-+ */
 +#define		TFE_BUS_PACKER_CFG_FMT_MIPI	0x0
 +#define TFE_BUS_IRQ_SUBSAMPLE_CFG_0(c)			BUS_REG(0x230 + (c) * 0x100)
 +#define TFE_BUS_IRQ_SUBSAMPLE_CFG_1(c)			BUS_REG(0x234 + (c) * 0x100)
@@ -375,29 +364,41 @@ index 000000000..aa3f56d4b
 +	.reg_update_clear = vfe_reg_update_clear,
 +};
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe.c b/drivers/media/platform/qcom/camss/camss-vfe.c
-index 5baf0e3d4..9a6fed815 100644
+index 5baf0e3d4..6eb54f96e 100644
 --- a/drivers/media/platform/qcom/camss/camss-vfe.c
 +++ b/drivers/media/platform/qcom/camss/camss-vfe.c
 @@ -342,6 +342,7 @@ static u32 vfe_src_pad_code(struct vfe_line *line, u32 sink_code,
  		break;
  	case CAMSS_660:
  	case CAMSS_2290:
-+	case CAMSS_MILOS:
  	case CAMSS_6150:
  	case CAMSS_7280:
++	case CAMSS_7635:
  	case CAMSS_8x96:
 diff --git a/drivers/media/platform/qcom/camss/camss-vfe.h b/drivers/media/platform/qcom/camss/camss-vfe.h
-index ae9dad353..d133ff3ca 100644
+index ae9dad353..7dff2ec24 100644
 --- a/drivers/media/platform/qcom/camss/camss-vfe.h
 +++ b/drivers/media/platform/qcom/camss/camss-vfe.h
 @@ -246,6 +246,7 @@ extern const struct vfe_hw_ops vfe_ops_4_7;
  extern const struct vfe_hw_ops vfe_ops_4_8;
  extern const struct vfe_hw_ops vfe_ops_170;
  extern const struct vfe_hw_ops vfe_ops_340;
-+extern const struct vfe_hw_ops vfe_ops_665;
  extern const struct vfe_hw_ops vfe_ops_480;
++extern const struct vfe_hw_ops vfe_ops_665;
  extern const struct vfe_hw_ops vfe_ops_680;
  extern const struct vfe_hw_ops vfe_ops_gen3;
+diff --git a/drivers/media/platform/qcom/camss/camss.h b/drivers/media/platform/qcom/camss/camss.h
+index 6d048414c..bd0b6194b 100644
+--- a/drivers/media/platform/qcom/camss/camss.h
++++ b/drivers/media/platform/qcom/camss/camss.h
+@@ -80,6 +80,7 @@ enum pm_domain {
+ enum camss_version {
+ 	CAMSS_660,
+ 	CAMSS_2290,
+ 	CAMSS_6150,
+ 	CAMSS_7280,
++	CAMSS_7635,
+ 	CAMSS_8x16,
 -- 
 2.55.0
 

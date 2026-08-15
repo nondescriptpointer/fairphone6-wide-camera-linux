@@ -1,5 +1,5 @@
 From e2530e9855398ee86d54bbc096e6e95a0c54ed51 Mon Sep 17 00:00:00 2001
-From: nondescriptpointer <public@nondescriptpointer.com>
+From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 5/5] arm64: dts: qcom: milos: add CAMSS and FP6 ultra-wide
  camera
@@ -13,6 +13,8 @@ on CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
 CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
 and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
 AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../boot/dts/qcom/milos-fairphone-fp6.dts     |  62 +++++++-
  arch/arm64/boot/dts/qcom/milos.dtsi           | 142 ++++++++++++++++++
