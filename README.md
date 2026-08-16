@@ -37,8 +37,11 @@ scripts/    capture / focus / helper tools
 2. `CSIPHY v2.2.1 lane config` — D-PHY lane sequence + datarate/AFE tuning for milos.
 3. `milos resources + compatible` — camss core: 4 CSIPHY / 3 CSID / 3 TFE, clocks (incl. the
    essential `soc_ahb`), interconnects, `qcom,milos-camss`.
-4. `ov13b10: OF match, selection API and supplies` — DT probing, the crop/native rectangles
-   libcamera needs, and full dovdd/avdd/dvdd rail management.
+4. `ov13b10: OF match, selection API and supplies` — DT probing and the crop/native
+   rectangles libcamera needs. Because the vendor base predates upstream commit
+   `03529c85f4e9`, this also backports its dovdd/avdd/dvdd bulk-regulator support unchanged;
+   there is no FP6-specific power sequence. When rebased onto a tree containing that commit,
+   only the OF match and selection API changes remain.
 5. `dts: CAMSS + FP6 ultra-wide camera` — `camss@ac13000`, the OV13B10 node, the focus VCM +
    `lens-focus`, orientation/rotation.
 
@@ -120,7 +123,8 @@ Then open GNOME **Camera**: upright, auto-exposed preview; close-up QR crisp.
 
 ## Upstreaming (help welcome)
 - **libcamera** sensor helper/properties
-- **ov13b10** OF/selection changes → linux-media
+- **ov13b10** OF/selection changes → linux-media (the three-supply support is already upstream
+  as `03529c85f4e9` and will be dropped when rebasing)
 - **milos CAMSS** support → linux-media
 - **Packaging** (config, libcamera patches, udev rule) → postmarketOS pmaports MR.
 
