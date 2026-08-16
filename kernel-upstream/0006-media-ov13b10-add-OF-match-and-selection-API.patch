@@ -1,4 +1,4 @@
-From 865eee410771137a1bf073db94cd349dbb69c426 Mon Sep 17 00:00:00 2001
+From f8f612faef934c90ea7861fcbc0b0ca718da9960 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 6/7] media: ov13b10: add OF match and selection API
@@ -10,6 +10,8 @@ Report the 4224x3136 native pixel array and the centred 4208x3120 active
 area through the V4L2 selection API. This lets userspace determine the
 sensor's pixel-array geometry and crop bounds.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/i2c/ov13b10.c | 40 +++++++++++++++++++++++++++++++++++++

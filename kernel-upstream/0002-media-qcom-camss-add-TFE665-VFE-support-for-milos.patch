@@ -1,4 +1,4 @@
-From f9890f07298cb5d030b9f090e009da2f09b75d77 Mon Sep 17 00:00:00 2001
+From 4a26f8f6705a47ff115e1f3ce7c0c01e51f923ee Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 2/7] media: qcom: camss: add TFE665 (VFE) support for milos
@@ -19,6 +19,8 @@ TFE665 also writes RDI rows on a 16-byte boundary. Select the existing
 RAW10 size is not naturally aligned advertise the stride written by
 the hardware.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/Makefile    |   1 +

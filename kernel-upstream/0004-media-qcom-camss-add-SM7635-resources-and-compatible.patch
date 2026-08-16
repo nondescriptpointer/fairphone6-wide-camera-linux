@@ -1,4 +1,4 @@
-From d6f4b17a74aaa7890e81aacfbfc08338f084f8e6 Mon Sep 17 00:00:00 2001
+From 4e3517635e6b52adbf7a2a9deb9149e60e06f601 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 4/7] media: qcom: camss: add SM7635 resources and compatible
@@ -22,6 +22,8 @@ to match the SM7635 block count and clock tree.
 The soc_ahb clock gates the register-access AHB bus and is required for
 the ISP registers to be reachable.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/camss.c | 250 ++++++++++++++++++++++

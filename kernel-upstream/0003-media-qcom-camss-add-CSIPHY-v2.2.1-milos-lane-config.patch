@@ -1,4 +1,4 @@
-From 2e496657e739f17bb8f3497c8d12bf322a3ac06e Mon Sep 17 00:00:00 2001
+From 31d7f29aafcd3db89f792ba373aff8a4ebce5711 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 3/7] media: qcom: camss: add CSIPHY v2.2.1 (milos) lane config
@@ -18,6 +18,8 @@ bytes of the settle count, so extend the existing runtime substitution
 to program the high byte as well. As with the other gen2 PHYs,
 skew-calibration entries are not applied.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../qcom/camss/camss-csiphy-3ph-1-0.c         | 142 ++++++++++++++++++

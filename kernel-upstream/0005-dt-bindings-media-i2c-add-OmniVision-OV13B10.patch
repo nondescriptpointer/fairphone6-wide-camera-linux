@@ -1,4 +1,4 @@
-From 9f000b67e8ea48cace7830b09f2d5265aa67a299 Mon Sep 17 00:00:00 2001
+From 4e8911f293e4cc7cf6f312f2b919b4a8cf270450 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
 Subject: [PATCH 5/7] dt-bindings: media: i2c: add OmniVision OV13B10
@@ -6,6 +6,8 @@ Subject: [PATCH 5/7] dt-bindings: media: i2c: add OmniVision OV13B10
 Document the OV13B10 image sensor, its clock and supplies, optional
 reset line, and two- or four-lane CSI-2 interface.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../bindings/media/i2c/ovti,ov13b10.yaml      | 112 ++++++++++++++++++

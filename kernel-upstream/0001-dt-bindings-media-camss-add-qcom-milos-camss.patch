@@ -1,4 +1,4 @@
-From 7a3a8e42ecfd7f01e5c0f9786bb5e0cfe0332818 Mon Sep 17 00:00:00 2001
+From 1c48fd9cd4d50c545e0b506b4023fd7ce967e459 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
 Subject: [PATCH 1/7] dt-bindings: media: camss: add qcom,milos-camss
@@ -6,6 +6,8 @@ Subject: [PATCH 1/7] dt-bindings: media: camss: add qcom,milos-camss
 Document the camera subsystem on SM7635 (Milos), comprising four
 CSIPHY, three CSID and three TFE instances.
 
+Assisted-by: pi:claude-opus-5
+Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../bindings/media/qcom,milos-camss.yaml      | 278 ++++++++++++++++++
