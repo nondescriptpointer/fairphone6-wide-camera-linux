@@ -8,44 +8,34 @@ Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
 GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi.
 
 On the Fairphone 6 enable the OV13B10 ultra-wide sensor and its focus
-VCM. Pin assignments are taken from the FP6 schematics: the sensor sits
-on CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
+VCM. The exact actuator is not documented: the schematic only shows
+AFVDD, AF_GND and the shared CCI I2C bus entering the camera module, and
+the vendor DT uses a generic qcom,actuator node. The device responds to
+the DW9714 10-bit direct-DAC protocol used by the mainline driver, and
+focus control works, so using the dongwoon,dw9714 compatible.
+
+Pin assignments are taken from the FP6 schematics: the sensor sits on
+CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
 CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
 and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
 AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
 
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../boot/dts/qcom/milos-fairphone-fp6.dts     |  62 +++++++-
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     |  41 +++++-
  arch/arm64/boot/dts/qcom/milos.dtsi           | 142 ++++++++++++++++++
- 2 files changed, 202 insertions(+), 2 deletions(-)
+ 2 files changed, 182 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 index e5944a1b2..de438e754 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-@@ -120,6 +120,7 @@ vreg_uw_dvdd: regulator-uw-dvdd {
- 		regulator-max-microvolt = <1200000>;
- 		startup-delay-us = <100>;
- 
-+		/* UW_DVDD_EN */
- 		gpio = <&tlmm 28 GPIO_ACTIVE_HIGH>;
- 		enable-active-high;
- 
-@@ -651,8 +652,19 @@ eeprom@50 {
+@@ -651,8 +651,12 @@ eeprom@50 {
  
  
  &cci0_i2c1 {
--	/* Awinic AW86017 VCM @ 0x0c */
+ 	/* Awinic AW86017 VCM @ 0x0c */
 -	/* UW cam: OmniVision OV13B10 @ 0x36 */
-+	/*
-+	 * Ultra-wide focus actuator (VCM) @ 0x0c. The exact part is not
-+	 * documented: the board schematic only routes AFVDD/AF_GND and the
-+	 * shared CCI I2C bus into the camera module, and the vendor DT uses
-+	 * a generic "qcom,actuator" node. The device does respond to the
-+	 * DW9714 10-bit direct-DAC protocol (single 2-byte write), which is
-+	 * what the mainline dw9714 driver speaks, and focus control works.
-+	 */
 +	ov13b10_vcm: focus@c {
 +		compatible = "dongwoon,dw9714";
 +		reg = <0x0c>;
@@ -54,7 +44,7 @@ index e5944a1b2..de438e754 100644
  
  	eeprom@52 {
  		compatible = "puya,p24c128f", "atmel,24c128";
-@@ -660,6 +672,50 @@ eeprom@52 {
+@@ -660,6 +664,41 @@ eeprom@52 {
  		vcc-supply = <&vreg_l6p>;
  		read-only;
  	};
@@ -64,17 +54,10 @@ index e5944a1b2..de438e754 100644
 +		compatible = "ovti,ov13b10";
 +		reg = <0x36>;
 +
-+		/* MCLK1 must run at 19.2 MHz: the mainline ov13b10 driver
-+		 * rejects any other input clock. */
 +		clocks = <&camcc CAM_CC_MCLK1_CLK>;
 +		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
 +		assigned-clock-rates = <19200000>;
 +
-+		/*
-+		 * Per the FP6 schematic: AVDD 2.8V from VREG_L4P_2P8, IOVDD
-+		 * 1.8V from VREG_L6P_1P8 (shared with the module EEPROM), and
-+		 * DVDD 1.2V from an on-board LDO gated by GPIO 28.
-+		 */
 +		avdd-supply = <&vreg_l4p>;
 +		dovdd-supply = <&vreg_l6p>;
 +		dvdd-supply = <&vreg_uw_dvdd>;
@@ -83,11 +66,9 @@ index e5944a1b2..de438e754 100644
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&cam_mclk1_default &ov13b10_reset_default>;
 +
-+		/* Rear-facing ultra-wide camera */
 +		orientation = <1>;
 +		rotation = <270>;
 +
-+		/* Focus actuator (creates the sensor<->lens ancillary link) */
 +		lens-focus = <&ov13b10_vcm>;
 +
 +		port {
@@ -105,22 +86,6 @@ index e5944a1b2..de438e754 100644
  };
  
  &cci1 {
-@@ -787,6 +843,7 @@ vreg_l3p: ldo3 {
- 			};
- 
- 			vreg_l4p: ldo4 {
-+				/* Camera AVDD (OV13B10 "avdd") */
- 				regulator-name = "vreg_l4p";
- 				regulator-min-microvolt = <2700000>;
- 				regulator-max-microvolt = <2900000>;
-@@ -799,6 +856,7 @@ vreg_l5p: ldo5 {
- 			};
- 
- 			vreg_l6p: ldo6 {
-+				/* Camera IOVDD (OV13B10 "dovdd", module EEPROM vcc) */
- 				regulator-name = "vreg_l6p";
- 				regulator-min-microvolt = <1700000>;
- 				regulator-max-microvolt = <1896000>;
 diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
 index 288e0e658..859d8e977 100644
 --- a/arch/arm64/boot/dts/qcom/milos.dtsi
