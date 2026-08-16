@@ -1,0 +1,243 @@
+From 23e7737f77f16acf7fc870f5465f7f143f466007 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Mon, 10 Aug 2026 22:37:17 +0200
+Subject: [PATCH 7/7] arm64: dts: qcom: milos: add CAMSS and FP6 ultra-wide
+ camera
+
+Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
+GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi.
+
+On the Fairphone 6 enable the OV13B10 ultra-wide sensor and its focus
+VCM. The exact actuator is not documented: the schematic only shows
+AFVDD, AF_GND and the shared CCI I2C bus entering the camera module, and
+the vendor DT uses a generic qcom,actuator node. The device responds to
+the DW9714 10-bit direct-DAC protocol used by the mainline driver, and
+focus control works, so using the dongwoon,dw9714 compatible.
+
+Pin assignments are taken from the FP6 schematics: the sensor sits on
+CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
+CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
+and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
+AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     |  41 +++++-
+ arch/arm64/boot/dts/qcom/milos.dtsi           | 135 ++++++++++++++++++
+ 2 files changed, 175 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
+index ebdca0e2d2f3..172a53588a3f 100644
+--- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
++++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
+@@ -561,7 +561,11 @@ eeprom@50 {
+ 
+ &cci0_i2c1 {
+ 	/* Awinic AW86017 VCM @ 0x0c */
+-	/* UW cam: OmniVision OV13B10 @ 0x36 */
++	ov13b10_vcm: focus@c {
++		compatible = "dongwoon,dw9714";
++		reg = <0x0c>;
++		vcc-supply = <&vreg_uw_afvdd_2p8>;
++	};
+ 
+ 	eeprom@52 {
+ 		compatible = "puya,p24c128f", "atmel,24c128";
+@@ -569,6 +573,41 @@ eeprom@52 {
+ 		vcc-supply = <&vreg_l6p>;
+ 		read-only;
+ 	};
++
++	/* UW cam: OmniVision OV13B10 @ 0x36 */
++	camera@36 {
++		compatible = "ovti,ov13b10";
++		reg = <0x36>;
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <19200000>;
++
++		avdd-supply = <&vreg_l4p>;
++		dovdd-supply = <&vreg_l6p>;
++		dvdd-supply = <&vreg_uw_dvdd>;
++
++		reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&cam_mclk1_default &ov13b10_reset_default>;
++
++		orientation = <1>;
++		rotation = <270>;
++
++		lens-focus = <&ov13b10_vcm>;
++
++		port {
++			ov13b10_ep: endpoint {
++				remote-endpoint = <&csiphy1_ep>;
++				data-lanes = <0 1 2 3>;
++				link-frequencies = /bits/ 64 <560000000>;
++			};
++		};
++	};
++};
++
++&camss {
++	status = "okay";
+ };
+ 
+ &cci1 {
+diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
+index 8c9232988953..d639ce931442 100644
+--- a/arch/arm64/boot/dts/qcom/milos.dtsi
++++ b/arch/arm64/boot/dts/qcom/milos.dtsi
+@@ -1976,6 +1976,120 @@ camcc: clock-controller@adb0000 {
+ 			#power-domain-cells = <1>;
+ 		};
+ 
++		camss: camss@ac13000 {
++			compatible = "qcom,milos-camss";
++
++			reg = <0x0 0x0ac13000 0x0 0x1000>,
++			      <0x0 0x0ac62000 0x0 0x1000>,
++			      <0x0 0x0ac71000 0x0 0x1000>,
++			      <0x0 0x0ac80000 0x0 0x1000>,
++			      <0x0 0x0ace4000 0x0 0x2000>,
++			      <0x0 0x0ace6000 0x0 0x2000>,
++			      <0x0 0x0ace8000 0x0 0x2000>,
++			      <0x0 0x0acea000 0x0 0x2000>,
++			      <0x0 0x0ac63800 0x0 0xb800>,
++			      <0x0 0x0ac72800 0x0 0xb800>,
++			      <0x0 0x0ac81800 0x0 0xb800>;
++			reg-names = "top",
++				    "csid0", "csid1", "csid2",
++				    "csiphy0", "csiphy1", "csiphy2", "csiphy3",
++				    "vfe0", "vfe1", "vfe2";
++
++			clocks = <&camcc CAM_CC_CPAS_AHB_CLK>,
++				 <&camcc CAM_CC_SOC_AHB_CLK>,
++				 <&camcc CAM_CC_CSIPHY0_CLK>,
++				 <&camcc CAM_CC_CSI0PHYTIMER_CLK>,
++				 <&camcc CAM_CC_CSIPHY1_CLK>,
++				 <&camcc CAM_CC_CSI1PHYTIMER_CLK>,
++				 <&camcc CAM_CC_CSIPHY2_CLK>,
++				 <&camcc CAM_CC_CSI2PHYTIMER_CLK>,
++				 <&camcc CAM_CC_CSIPHY3_CLK>,
++				 <&camcc CAM_CC_CSI3PHYTIMER_CLK>,
++				 <&camcc CAM_CC_TFE_0_AHB_CLK>,
++				 <&camcc CAM_CC_TFE_1_AHB_CLK>,
++				 <&camcc CAM_CC_TFE_2_AHB_CLK>,
++				 <&camcc CAM_CC_TFE_0_CSID_CLK>,
++				 <&camcc CAM_CC_TFE_1_CSID_CLK>,
++				 <&camcc CAM_CC_TFE_2_CSID_CLK>,
++				 <&camcc CAM_CC_TFE_0_CPHY_RX_CLK>,
++				 <&camcc CAM_CC_TFE_1_CPHY_RX_CLK>,
++				 <&camcc CAM_CC_TFE_2_CPHY_RX_CLK>,
++				 <&camcc CAM_CC_TFE_0_CLK>,
++				 <&camcc CAM_CC_TFE_1_CLK>,
++				 <&camcc CAM_CC_TFE_2_CLK>,
++				 <&camcc CAM_CC_CAMNOC_RT_AXI_CLK>,
++				 <&camcc CAM_CC_CAMNOC_NRT_AXI_CLK>,
++				 <&camcc CAM_CC_CAMNOC_AXI_HF_CLK>,
++				 <&camcc CAM_CC_CAMNOC_AXI_SF_CLK>;
++			clock-names = "cpas_ahb",
++				      "soc_ahb",
++				      "csiphy0", "csiphy0_timer",
++				      "csiphy1", "csiphy1_timer",
++				      "csiphy2", "csiphy2_timer",
++				      "csiphy3", "csiphy3_timer",
++				      "tfe0_ahb", "tfe1_ahb", "tfe2_ahb",
++				      "csi0", "csi1", "csi2",
++				      "vfe0_cphy_rx", "vfe1_cphy_rx", "vfe2_cphy_rx",
++				      "vfe0", "vfe1", "vfe2",
++				      "camnoc_rt_axi", "camnoc_nrt_axi",
++				      "camnoc_axi_hf", "camnoc_axi_sf";
++
++			interrupts = <GIC_SPI 464 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 466 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 203 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 477 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 478 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 479 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 448 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 602 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 604 IRQ_TYPE_EDGE_RISING 0>,
++				     <GIC_SPI 688 IRQ_TYPE_EDGE_RISING 0>;
++			interrupt-names = "csid0", "csid1", "csid2",
++					  "csiphy0", "csiphy1", "csiphy2", "csiphy3",
++					  "vfe0", "vfe1", "vfe2";
++
++			interconnects = <&gem_noc MASTER_APPSS_PROC QCOM_ICC_TAG_ACTIVE_ONLY
++					 &cnoc_cfg SLAVE_CAMERA_CFG QCOM_ICC_TAG_ACTIVE_ONLY>,
++					<&mmss_noc MASTER_CAMNOC_HF QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>,
++					<&mmss_noc MASTER_CAMNOC_SF QCOM_ICC_TAG_ALWAYS
++					 &mc_virt SLAVE_EBI1 QCOM_ICC_TAG_ALWAYS>;
++			interconnect-names = "ahb", "hf_mnoc", "sf_mnoc";
++
++			iommus = <&apps_smmu 0x0880 0x20>,
++				 <&apps_smmu 0x08a0 0x20>;
++
++			power-domains = <&camcc CAM_CC_CAMSS_TOP_GDSC>;
++
++			status = "disabled";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				port@0 {
++					reg = <0>;
++				};
++
++				port@1 {
++					reg = <1>;
++
++					csiphy1_ep: endpoint {
++						remote-endpoint = <&ov13b10_ep>;
++						data-lanes = <0 1 2 3>;
++					};
++				};
++
++				port@2 {
++					reg = <2>;
++				};
++
++				port@3 {
++					reg = <3>;
++				};
++			};
++		};
++
+ 		dispcc: clock-controller@af00000 {
+ 			compatible = "qcom,milos-dispcc";
+ 			reg = <0x0 0x0af00000 0x0 0x20000>;
+@@ -2208,6 +2322,27 @@ data-pins {
+ 				};
+ 			};
+ 
++			cam_mclk1_default: cam-mclk1-default-state {
++				pins = "gpio84";
++				function = "cam_mclk";
++				drive-strength = <4>;
++				bias-disable;
++			};
++
++			cam_mclk1_sleep: cam-mclk1-sleep-state {
++				pins = "gpio84";
++				function = "cam_mclk";
++				drive-strength = <2>;
++				bias-pull-down;
++			};
++
++			ov13b10_reset_default: ov13b10-reset-default-state {
++				pins = "gpio41";
++				function = "gpio";
++				drive-strength = <2>;
++				bias-disable;
++			};
++
+ 			cci0_0_default: cci0-0-default-state {
+ 				sda-pins {
+ 					pins = "gpio88";
+-- 
+2.55.0
+

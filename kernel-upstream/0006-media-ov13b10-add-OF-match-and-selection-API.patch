@@ -1,0 +1,94 @@
+From 865eee410771137a1bf073db94cd349dbb69c426 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Mon, 10 Aug 2026 22:37:17 +0200
+Subject: [PATCH 6/7] media: ov13b10: add OF match and selection API
+
+Add an OF device ID table so the driver can probe on Device Tree
+platforms.
+
+Report the 4224x3136 native pixel array and the centred 4208x3120 active
+area through the V4L2 selection API. This lets userspace determine the
+sensor's pixel-array geometry and crop bounds.
+
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ drivers/media/i2c/ov13b10.c | 40 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/drivers/media/i2c/ov13b10.c b/drivers/media/i2c/ov13b10.c
+index b0d34141a13a..5b487a094dd8 100644
+--- a/drivers/media/i2c/ov13b10.c
++++ b/drivers/media/i2c/ov13b10.c
+@@ -65,6 +65,14 @@
+ #define OV13B10_DGTL_GAIN_H_SHIFT	10
+ #define OV13B10_DGTL_GAIN_H_MASK	0x3
+ 
++/* Native and active pixel array size. */
++#define OV13B10_NATIVE_WIDTH		4224
++#define OV13B10_NATIVE_HEIGHT		3136
++#define OV13B10_PIXEL_ARRAY_LEFT	8
++#define OV13B10_PIXEL_ARRAY_TOP		8
++#define OV13B10_PIXEL_ARRAY_WIDTH	4208
++#define OV13B10_PIXEL_ARRAY_HEIGHT	3120
++
+ /* Test Pattern Control */
+ #define OV13B10_REG_TEST_PATTERN	0x5080
+ #define OV13B10_TEST_PATTERN_ENABLE	BIT(7)
+@@ -1338,10 +1346,35 @@ static const struct v4l2_subdev_video_ops ov13b10_video_ops = {
+ 	.s_stream = ov13b10_set_stream,
+ };
+ 
++static int ov13b10_get_selection(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_selection *sel)
++{
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.left = OV13B10_PIXEL_ARRAY_LEFT;
++		sel->r.top = OV13B10_PIXEL_ARRAY_TOP;
++		sel->r.width = OV13B10_PIXEL_ARRAY_WIDTH;
++		sel->r.height = OV13B10_PIXEL_ARRAY_HEIGHT;
++		return 0;
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = OV13B10_NATIVE_WIDTH;
++		sel->r.height = OV13B10_NATIVE_HEIGHT;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
+ 	.enum_mbus_code = ov13b10_enum_mbus_code,
+ 	.get_fmt = ov13b10_get_pad_format,
+ 	.set_fmt = ov13b10_set_pad_format,
++	.get_selection = ov13b10_get_selection,
+ 	.enum_frame_size = ov13b10_enum_frame_size,
+ };
+ 
+@@ -1705,11 +1738,18 @@ static const struct acpi_device_id ov13b10_acpi_ids[] = {
+ MODULE_DEVICE_TABLE(acpi, ov13b10_acpi_ids);
+ #endif
+ 
++static const struct of_device_id ov13b10_of_match[] = {
++	{ .compatible = "ovti,ov13b10" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13b10_of_match);
++
+ static struct i2c_driver ov13b10_i2c_driver = {
+ 	.driver = {
+ 		.name = "ov13b10",
+ 		.pm = pm_ptr(&ov13b10_pm_ops),
+ 		.acpi_match_table = ACPI_PTR(ov13b10_acpi_ids),
++		.of_match_table = ov13b10_of_match,
+ 	},
+ 	.probe = ov13b10_probe,
+ 	.remove = ov13b10_remove,
+-- 
+2.55.0
+
