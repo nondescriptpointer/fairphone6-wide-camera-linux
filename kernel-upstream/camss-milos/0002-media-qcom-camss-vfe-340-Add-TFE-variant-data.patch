@@ -1,0 +1,250 @@
+From 7af81e322aeb4c85d83b69a6643425f047eb8281 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 23 Aug 2026 15:39:50 +0200
+Subject: [PATCH 2/5] media: qcom: camss: vfe-340: Add TFE variant data
+
+The TFE block comes in several variants that share this register layout
+but differ in a handful of constants. Move those constants out of the
+macros and into per-variant data, so a new variant is a table entry
+rather than a copy of the file: the BUS block offset, the packer format
+used by the frame based RDI clients, and the number of bus clients
+(write masters) the hardware implements.
+
+While here, drop TFE_CLI_NUM. It was the terminator of enum tfe_client
+and served as the bound of the bus overflow reporting loop, which
+conflates two unrelated quantities: the clients this driver knows how
+to program (BAYER and RDI0..2, named by the enum) and the clients the
+hardware implements, which is what TFE_BUS_OVERFLOW_STATUS reports a
+bit per. On TFE530 both happen to be 10, so the bug is latent, but the
+loop bound belongs to the hardware description and not to the driver's
+list of names. Keeping the terminator around would leave that trap in
+place for the next variant and for the next loop over clients, and the
+resulting under-reporting is silent. The bound now comes from the variant 
+data, and enum tfe_client is left describing only the clients the driver
+actually programs.
+
+No functional change intended. tfe530_variant reproduces the previous
+constants exactly; the generated code differs only in unsigned rather
+than signed extension of the register offsets and in the association
+of a constant addition, both of which compute the same addresses.
+
+Assisted-by: pi:claude-opus-5
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ .../media/platform/qcom/camss/camss-vfe-340.c | 112 ++++++++++--------
+ 1 file changed, 65 insertions(+), 47 deletions(-)
+
+diff --git a/drivers/media/platform/qcom/camss/camss-vfe-340.c b/drivers/media/platform/qcom/camss/camss-vfe-340.c
+index 2526d568686d..92279d827635 100644
+--- a/drivers/media/platform/qcom/camss/camss-vfe-340.c
++++ b/drivers/media/platform/qcom/camss/camss-vfe-340.c
+@@ -30,9 +30,17 @@
+ 
+ #define TFE_IRQ_STATUS_0				(0x04c)
+ 
+-#define BUS_REG(a)					(0xa00 + (a))
++struct tfe_variant {
++	u32 bus_base;
++	u32 rdi_packer_fmt;
++	u8 num_clients;
++};
++
++static const struct tfe_variant *tfe_variant(struct vfe_device *vfe);
+ 
+-#define TFE_BUS_IRQ_MASK_0				BUS_REG(0x18)
++#define BUS_REG(vfe, a)					(tfe_variant(vfe)->bus_base + (a))
++
++#define TFE_BUS_IRQ_MASK_0(vfe)				BUS_REG(vfe, 0x18)
+ #define		TFE_BUS_IRQ_MASK_RUP_DONE_MASK	GENMASK(3, 0)
+ #define		TFE_BUS_IRQ_MASK_RUP_DONE(sc)	FIELD_PREP(TFE_BUS_IRQ_MASK_RUP_DONE_MASK, BIT(sc))
+ #define		TFE_BUS_IRQ_MASK_BUF_DONE_MASK	GENMASK(15, 8)
+@@ -41,37 +49,37 @@
+ #define		TFE_BUS_IRQ_MASK_0_VIOL		BIT(30)
+ #define		TFE_BUS_IRQ_MASK_0_IMG_VIOL	BIT(31)
+ 
+-#define TFE_BUS_IRQ_MASK_1				BUS_REG(0x1c)
+-#define TFE_BUS_IRQ_CLEAR_0				BUS_REG(0x20)
+-#define TFE_BUS_IRQ_STATUS_0				BUS_REG(0x28)
+-#define TFE_BUS_IRQ_CMD					BUS_REG(0x30)
++#define TFE_BUS_IRQ_MASK_1(vfe)				BUS_REG(vfe, 0x1c)
++#define TFE_BUS_IRQ_CLEAR_0(vfe)			BUS_REG(vfe, 0x20)
++#define TFE_BUS_IRQ_STATUS_0(vfe)			BUS_REG(vfe, 0x28)
++#define TFE_BUS_IRQ_CMD(vfe)				BUS_REG(vfe, 0x30)
+ #define		TFE_BUS_IRQ_CMD_CLEAR		BIT(0)
+ 
+-#define TFE_BUS_STATUS_CLEAR				BUS_REG(0x60)
+-#define TFE_BUS_VIOLATION_STATUS			BUS_REG(0x64)
+-#define TFE_BUS_OVERFLOW_STATUS				BUS_REG(0x68)
+-#define TFE_BUS_IMAGE_SZ_VIOLATION_STATUS		BUS_REG(0x70)
++#define TFE_BUS_STATUS_CLEAR(vfe)			BUS_REG(vfe, 0x60)
++#define TFE_BUS_VIOLATION_STATUS(vfe)			BUS_REG(vfe, 0x64)
++#define TFE_BUS_OVERFLOW_STATUS(vfe)			BUS_REG(vfe, 0x68)
++#define TFE_BUS_IMAGE_SZ_VIOLATION_STATUS(vfe)		BUS_REG(vfe, 0x70)
+ 
+-#define TFE_BUS_CLIENT_CFG(c)				BUS_REG(0x200 + (c) * 0x100)
++#define TFE_BUS_CLIENT_CFG(vfe, c)			BUS_REG(vfe, 0x200 + (c) * 0x100)
+ #define		TFE_BUS_CLIENT_CFG_EN		BIT(0)
+ #define		TFE_BUS_CLIENT_CFG_AUTORECOVER	BIT(4)
+ #define		TFE_BUS_CLIENT_CFG_MODE_FRAME	BIT(16)
+-#define TFE_BUS_IMAGE_ADDR(c)				BUS_REG(0x204 + (c) * 0x100)
+-#define TFE_BUS_FRAME_INCR(c)				BUS_REG(0x208 + (c) * 0x100)
+-#define TFE_BUS_IMAGE_CFG_0(c)				BUS_REG(0x20c + (c) * 0x100)
++#define TFE_BUS_IMAGE_ADDR(vfe, c)			BUS_REG(vfe, 0x204 + (c) * 0x100)
++#define TFE_BUS_FRAME_INCR(vfe, c)			BUS_REG(vfe, 0x208 + (c) * 0x100)
++#define TFE_BUS_IMAGE_CFG_0(vfe, c)			BUS_REG(vfe, 0x20c + (c) * 0x100)
+ #define		TFE_BUS_IMAGE_CFG_0_DEFAULT	0xffff
+-#define TFE_BUS_IMAGE_CFG_1(c)				BUS_REG(0x210 + (c) * 0x100)
+-#define TFE_BUS_IMAGE_CFG_2(c)				BUS_REG(0x214 + (c) * 0x100)
++#define TFE_BUS_IMAGE_CFG_1(vfe, c)			BUS_REG(vfe, 0x210 + (c) * 0x100)
++#define TFE_BUS_IMAGE_CFG_2(vfe, c)			BUS_REG(vfe, 0x214 + (c) * 0x100)
+ #define		TFE_BUS_IMAGE_CFG_2_DEFAULT	0xffff
+-#define TFE_BUS_PACKER_CFG(c)				BUS_REG(0x218 + (c) * 0x100)
++#define TFE_BUS_PACKER_CFG(vfe, c)			BUS_REG(vfe, 0x218 + (c) * 0x100)
+ #define		TFE_BUS_PACKER_CFG_FMT_PLAIN8	0x1
+ #define		TFE_BUS_PACKER_CFG_FMT_PLAIN64	0xa
+ #define		TFE_BUS_PACKER_CFG_FMT_MIPI10	0xc
+ #define		TFE_BUS_PACKER_CFG_FMT_MIPI12	0xd
+-#define TFE_BUS_IRQ_SUBSAMPLE_CFG_0(c)			BUS_REG(0x230 + (c) * 0x100)
+-#define TFE_BUS_IRQ_SUBSAMPLE_CFG_1(c)			BUS_REG(0x234 + (c) * 0x100)
+-#define TFE_BUS_FRAMEDROP_CFG_0(c)			BUS_REG(0x238 + (c) * 0x100)
+-#define TFE_BUS_FRAMEDROP_CFG_1(c)			BUS_REG(0x23c + (c) * 0x100)
++#define TFE_BUS_IRQ_SUBSAMPLE_CFG_0(vfe, c)		BUS_REG(vfe, 0x230 + (c) * 0x100)
++#define TFE_BUS_IRQ_SUBSAMPLE_CFG_1(vfe, c)		BUS_REG(vfe, 0x234 + (c) * 0x100)
++#define TFE_BUS_FRAMEDROP_CFG_0(vfe, c)			BUS_REG(vfe, 0x238 + (c) * 0x100)
++#define TFE_BUS_FRAMEDROP_CFG_1(vfe, c)			BUS_REG(vfe, 0x23c + (c) * 0x100)
+ 
+ #define PP_CROP_REG(a)					(0x2800 + (a))
+ #define TFE_PP_CROP_CFG					PP_CROP_REG(0x60)
+@@ -81,6 +89,17 @@
+ #define		TFE_PP_CROP_LAST	GENMASK(13, 0)
+ #define	TFE_PP_CROP_PIX_CFG				PP_CROP_REG(0x6C)
+ 
++static const struct tfe_variant tfe530_variant = {
++	.bus_base = 0xa00,
++	.rdi_packer_fmt = TFE_BUS_PACKER_CFG_FMT_PLAIN64,
++	.num_clients = 10,
++};
++
++static const struct tfe_variant *tfe_variant(struct vfe_device *vfe)
++{
++	return &tfe530_variant;
++}
++
+ enum tfe_client {
+ 	TFE_CLI_BAYER,
+ 	TFE_CLI_IDEAL_RAW,
+@@ -92,7 +111,6 @@ enum tfe_client {
+ 	TFE_CLI_RDI0,
+ 	TFE_CLI_RDI1,
+ 	TFE_CLI_RDI2,
+-	TFE_CLI_NUM
+ };
+ 
+ enum tfe_iface {
+@@ -192,10 +210,10 @@ static irqreturn_t vfe_isr(int irq, void *dev)
+ 	}
+ 
+ 	if (status & TFE_IRQ_MASK_0_BUS_WR) {
+-		u32 bus_status = readl_relaxed(vfe->base + TFE_BUS_IRQ_STATUS_0);
++		u32 bus_status = readl_relaxed(vfe->base + TFE_BUS_IRQ_STATUS_0(vfe));
+ 
+-		writel_relaxed(bus_status, vfe->base + TFE_BUS_IRQ_CLEAR_0);
+-		writel_relaxed(TFE_BUS_IRQ_CMD_CLEAR, vfe->base + TFE_BUS_IRQ_CMD);
++		writel_relaxed(bus_status, vfe->base + TFE_BUS_IRQ_CLEAR_0(vfe));
++		writel_relaxed(TFE_BUS_IRQ_CMD_CLEAR, vfe->base + TFE_BUS_IRQ_CMD(vfe));
+ 
+ 		for (i = 0; i < TFE_IFACE_NUM; i++) {
+ 			if (bus_status & TFE_BUS_IRQ_MASK_RUP_DONE(i))
+@@ -220,10 +238,10 @@ static irqreturn_t vfe_isr(int irq, void *dev)
+ 					    vfe->id);
+ 	}
+ 
+-	status = readl_relaxed(vfe->base + TFE_BUS_OVERFLOW_STATUS);
++	status = readl_relaxed(vfe->base + TFE_BUS_OVERFLOW_STATUS(vfe));
+ 	if (status) {
+-		writel_relaxed(status, vfe->base + TFE_BUS_STATUS_CLEAR);
+-		for (i = 0; i < TFE_CLI_NUM; i++) {
++		writel_relaxed(status, vfe->base + TFE_BUS_STATUS_CLEAR(vfe));
++		for (i = 0; i < tfe_variant(vfe)->num_clients; i++) {
+ 			if (status & BIT(i))
+ 				dev_err_ratelimited(vfe->camss->dev,
+ 						    "VFE%u: bus overflow for client %u\n",
+@@ -246,7 +264,7 @@ static void vfe_enable_irq(struct vfe_device *vfe)
+ 	       vfe->base + TFE_IRQ_MASK_0);
+ 	writel(TFE_BUS_IRQ_MASK_RUP_DONE_MASK | TFE_BUS_IRQ_MASK_BUF_DONE_MASK |
+ 	       TFE_BUS_IRQ_MASK_0_CONS_VIOL | TFE_BUS_IRQ_MASK_0_VIOL |
+-	       TFE_BUS_IRQ_MASK_0_IMG_VIOL, vfe->base + TFE_BUS_IRQ_MASK_0);
++	       TFE_BUS_IRQ_MASK_0_IMG_VIOL, vfe->base + TFE_BUS_IRQ_MASK_0(vfe));
+ }
+ 
+ static void vfe_wm_update(struct vfe_device *vfe, u8 wm, u32 addr,
+@@ -254,7 +272,7 @@ static void vfe_wm_update(struct vfe_device *vfe, u8 wm, u32 addr,
+ {
+ 	u8 client = tfe_wm_client_map[wm];
+ 
+-	writel_relaxed(addr, vfe->base + TFE_BUS_IMAGE_ADDR(client));
++	writel_relaxed(addr, vfe->base + TFE_BUS_IMAGE_ADDR(vfe, client));
+ }
+ 
+ static u32 vfe_packer_format(struct vfe_device *vfe, u32 pixelformat)
+@@ -301,35 +319,35 @@ static void vfe_wm_start(struct vfe_device *vfe, u8 wm, struct vfe_line *line)
+ 
+ 		/* Write Engine */
+ 		writel_relaxed(pix->width | (pix->height << 16),
+-			       vfe->base + TFE_BUS_IMAGE_CFG_0(client));
+-		writel_relaxed(0u, vfe->base + TFE_BUS_IMAGE_CFG_1(client));
+-		writel_relaxed(stride, vfe->base + TFE_BUS_IMAGE_CFG_2(client));
+-		writel_relaxed(stride * pix->height, vfe->base + TFE_BUS_FRAME_INCR(client));
++			       vfe->base + TFE_BUS_IMAGE_CFG_0(vfe, client));
++		writel_relaxed(0u, vfe->base + TFE_BUS_IMAGE_CFG_1(vfe, client));
++		writel_relaxed(stride, vfe->base + TFE_BUS_IMAGE_CFG_2(vfe, client));
++		writel_relaxed(stride * pix->height, vfe->base + TFE_BUS_FRAME_INCR(vfe, client));
+ 		writel_relaxed(vfe_packer_format(vfe, pix->pixelformat),
+-			       vfe->base + TFE_BUS_PACKER_CFG(client));
++			       vfe->base + TFE_BUS_PACKER_CFG(vfe, client));
+ 
+ 		cfg |= TFE_BUS_CLIENT_CFG_AUTORECOVER;
+ 	} else { /* RDI - Frame based */
+ 		writel_relaxed(TFE_BUS_IMAGE_CFG_0_DEFAULT,
+-			       vfe->base + TFE_BUS_IMAGE_CFG_0(client));
+-		writel_relaxed(0u, vfe->base + TFE_BUS_IMAGE_CFG_1(client));
++			       vfe->base + TFE_BUS_IMAGE_CFG_0(vfe, client));
++		writel_relaxed(0u, vfe->base + TFE_BUS_IMAGE_CFG_1(vfe, client));
+ 		writel_relaxed(TFE_BUS_IMAGE_CFG_2_DEFAULT,
+-			       vfe->base + TFE_BUS_IMAGE_CFG_2(client));
+-		writel_relaxed(stride * pix->height, vfe->base + TFE_BUS_FRAME_INCR(client));
+-		writel_relaxed(TFE_BUS_PACKER_CFG_FMT_PLAIN64,
+-			       vfe->base + TFE_BUS_PACKER_CFG(client));
++			       vfe->base + TFE_BUS_IMAGE_CFG_2(vfe, client));
++		writel_relaxed(stride * pix->height, vfe->base + TFE_BUS_FRAME_INCR(vfe, client));
++		writel_relaxed(tfe_variant(vfe)->rdi_packer_fmt,
++			       vfe->base + TFE_BUS_PACKER_CFG(vfe, client));
+ 		cfg |= TFE_BUS_CLIENT_CFG_MODE_FRAME;
+ 	}
+ 
+ 	/* No dropped frames, one irq per frame */
+-	writel_relaxed(0, vfe->base + TFE_BUS_FRAMEDROP_CFG_0(client));
+-	writel_relaxed(1, vfe->base + TFE_BUS_FRAMEDROP_CFG_1(client));
+-	writel_relaxed(0, vfe->base + TFE_BUS_IRQ_SUBSAMPLE_CFG_0(client));
+-	writel_relaxed(1, vfe->base + TFE_BUS_IRQ_SUBSAMPLE_CFG_1(client));
++	writel_relaxed(0, vfe->base + TFE_BUS_FRAMEDROP_CFG_0(vfe, client));
++	writel_relaxed(1, vfe->base + TFE_BUS_FRAMEDROP_CFG_1(vfe, client));
++	writel_relaxed(0, vfe->base + TFE_BUS_IRQ_SUBSAMPLE_CFG_0(vfe, client));
++	writel_relaxed(1, vfe->base + TFE_BUS_IRQ_SUBSAMPLE_CFG_1(vfe, client));
+ 
+ 	vfe_enable_irq(vfe);
+ 
+-	writel(cfg, vfe->base + TFE_BUS_CLIENT_CFG(client));
++	writel(cfg, vfe->base + TFE_BUS_CLIENT_CFG(vfe, client));
+ 
+ 	dev_dbg(vfe->camss->dev, "VFE%u: Started client %u width %u height %u stride %u\n",
+ 		vfe->id, client, pix->width, pix->height, stride);
+@@ -339,7 +357,7 @@ static void vfe_wm_stop(struct vfe_device *vfe, u8 wm)
+ {
+ 	u8 client = tfe_wm_client_map[wm];
+ 
+-	writel(0, vfe->base + TFE_BUS_CLIENT_CFG(client));
++	writel(0, vfe->base + TFE_BUS_CLIENT_CFG(vfe, client));
+ 
+ 	dev_dbg(vfe->camss->dev, "VFE%u: Stopped client %u\n", vfe->id, client);
+ }

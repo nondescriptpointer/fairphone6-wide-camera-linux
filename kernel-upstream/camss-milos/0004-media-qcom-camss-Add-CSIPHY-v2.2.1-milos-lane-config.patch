@@ -1,7 +1,7 @@
-From 58fd3a15ade292d75601c5ccd1f35e9dde45b9e1 Mon Sep 17 00:00:00 2001
+From e2b7e82b7f90229a36a3d15b7d23f223d68ec6a3 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
-Subject: [PATCH 3/4] media: qcom: camss: Add CSIPHY v2.2.1 (milos) lane config
+Subject: [PATCH 4/5] media: qcom: camss: Add CSIPHY v2.2.1 (milos) lane config
 
 Add the D-PHY lane register sequence and AFE tuning for a 560 MHz link
 frequency, corresponding to 1.12 Gbps per lane, for the CSIPHY v2.2.1

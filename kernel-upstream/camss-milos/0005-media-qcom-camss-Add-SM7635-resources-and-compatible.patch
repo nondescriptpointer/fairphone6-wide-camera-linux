@@ -1,38 +1,33 @@
-From 32385fccb19f47567d79aaed4fa20edf9be5052f Mon Sep 17 00:00:00 2001
+From 497ec0d5a956954c32c139c4ec63311f113c4011 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Mon, 10 Aug 2026 22:37:17 +0200
-Subject: [PATCH 4/4] media: qcom: camss: Add SM7635 resources and compatible
+Date: Sun, 23 Aug 2026 15:41:52 +0200
+Subject: [PATCH 5/5] media: qcom: camss: Add SM7635 resources and compatible
 
-Add the resources for the SM7635 CAMSS complex, comprising four CSIPHY
-v2.2.1, three CSID665 and three TFE665 instances, and expose it through
-the qcom,milos-camss compatible.
+Add the CSIPHY, CSID and VFE resources for the Qualcomm milos (SM7635)
+SoC, along with the qcom,milos-camss compatible.
 
-The topology and per-instance clock assignments are derived from the
-published downstream platform/vendor/qcom/proprietary/camera-devicetree
-sources for SM7635 and cross-checked against camcc-milos. The downstream
-camera-kernel cam_tfe665.h and cam_tfe_csid665.h register descriptions
-identify the hardware revisions and layouts.
+Only the RDI lines are wired up. The PIX path drives the pixel
+processing crop block, which on TFE530 is the post-BDS crop at 0x2800
+from the TFE base. TFE665 has a rather different pixel pipeline: the
+equivalent block is a different module sitting at 0x5200, and even the
+CAMIF moves from 0x200 to 0x400. Exposing a PIX video device before
+that path has been worked out and tested on hardware would only offer
+a node that cannot produce frames, so line_num stays at 3.
 
-CSID665's RDI layout matches the existing csid_ops_340 implementation,
-and CSIPHY v2.2.1 uses csiphy_ops_3ph_1_0 with the SM7635 register table.
-TFE665 uses the vfe_ops_665 implementation. Base the resource rate tables
-and interconnect votes on QCM2290's TFE CAMSS resources, extending them
-to match the SM7635 block count and clock tree.
-
-The soc_ahb clock gates the register-access AHB bus and is required for
-the ISP registers to be reachable.
+Tested on a Fairphone 6 (SM7635) with an OmniVision OV13B10 on CSIPHY0,
+capturing RAW10 frames through all three RDI lines.
 
 Assisted-by: pi:claude-opus-5
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- drivers/media/platform/qcom/camss/camss.c | 250 ++++++++++++++++++++++
- 1 file changed, 250 insertions(+)
+ drivers/media/platform/qcom/camss/camss.c | 247 ++++++++++++++++++++++
+ 1 file changed, 247 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
-index 2123f6388e3d..e9d1992a6607 100644
+index 2123f6388e3d..d456ca0a0270 100644
 --- a/drivers/media/platform/qcom/camss/camss.c
 +++ b/drivers/media/platform/qcom/camss/camss.c
-@@ -1950,6 +1950,243 @@ static const struct resources_icc icc_res_sm6350[] = {
+@@ -1950,6 +1950,240 @@ static const struct resources_icc icc_res_sm6350[] = {
  	},
  };
  
@@ -193,10 +188,9 @@ index 2123f6388e3d..e9d1992a6607 100644
 +		.reg = { "vfe0" },
 +		.interrupt = { "vfe0" },
 +		.vfe = {
-+			.line_num = 4,
-+			.hw_ops = &vfe_ops_665,
-+			.formats_rdi = &vfe_formats_rdi_845,
-+			.formats_pix = &vfe_formats_pix_845
++			.line_num = 3,
++			.hw_ops = &vfe_ops_340,
++			.formats_rdi = &vfe_formats_rdi_845
 +		}
 +	},
 +
@@ -220,10 +214,9 @@ index 2123f6388e3d..e9d1992a6607 100644
 +		.reg = { "vfe1" },
 +		.interrupt = { "vfe1" },
 +		.vfe = {
-+			.line_num = 4,
-+			.hw_ops = &vfe_ops_665,
-+			.formats_rdi = &vfe_formats_rdi_845,
-+			.formats_pix = &vfe_formats_pix_845
++			.line_num = 3,
++			.hw_ops = &vfe_ops_340,
++			.formats_rdi = &vfe_formats_rdi_845
 +		}
 +	},
 +
@@ -247,10 +240,9 @@ index 2123f6388e3d..e9d1992a6607 100644
 +		.reg = { "vfe2" },
 +		.interrupt = { "vfe2" },
 +		.vfe = {
-+			.line_num = 4,
-+			.hw_ops = &vfe_ops_665,
-+			.formats_rdi = &vfe_formats_rdi_845,
-+			.formats_pix = &vfe_formats_pix_845
++			.line_num = 3,
++			.hw_ops = &vfe_ops_340,
++			.formats_rdi = &vfe_formats_rdi_845
 +		}
 +	},
 +};
@@ -276,7 +268,7 @@ index 2123f6388e3d..e9d1992a6607 100644
  static const struct camss_subdev_resources csiphy_res_8250[] = {
  	/* CSIPHY0 */
  	{
-@@ -5655,6 +5892,18 @@ static const struct camss_resources sm6350_resources = {
+@@ -5655,6 +5889,18 @@ static const struct camss_resources sm6350_resources = {
  	.vfe_num = ARRAY_SIZE(vfe_res_sm6350),
  };
  
@@ -295,7 +287,7 @@ index 2123f6388e3d..e9d1992a6607 100644
  static const struct camss_resources sm8250_resources = {
  	.version = CAMSS_8250,
  	.pd_name = "top",
-@@ -5740,6 +5989,7 @@ static const struct camss_resources x1e80100_resources = {
+@@ -5740,6 +5986,7 @@ static const struct camss_resources x1e80100_resources = {
  };
  
  static const struct of_device_id camss_dt_match[] = {
