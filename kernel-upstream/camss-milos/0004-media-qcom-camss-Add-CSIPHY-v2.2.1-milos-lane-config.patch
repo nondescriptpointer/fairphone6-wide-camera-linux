@@ -1,34 +1,30 @@
-From debeba128500d86ff31caa95b8f4dc96754d16a2 Mon Sep 17 00:00:00 2001
+From 06ff44f270c43e88a315b905fb88e190a2c4977f Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 4/5] media: qcom: camss: Add CSIPHY v2.2.1 (milos) lane config
 
-Add the D-PHY lane register sequence and AFE tuning for a 560 MHz link
-frequency, corresponding to 1.12 Gbps per lane, for the CSIPHY v2.2.1
-revision on milos. The settings are transcribed from the downstream
+Add the D-PHY lane register sequence for the CSIPHY v2.2.1 revision
+found on milos, transcribed from the two-phase table in the downstream
 cam_csiphy_2_2_1_hwreg.h.
 
 The sequence selects four-lane, two-phase D-PHY mode and programs the
-v2.2.1 common registers and per-lane tuning. The common-control register
-window starts at offset 0x1000, allowing the generic common-control
-writes in csiphy_lanes_enable() to address the correct registers. The
-data-rate-specific AFE/CDR settings use the standard-channel values;
-duplicate short-channel settings are omitted. The table includes both
-bytes of the settle count, so extend the existing runtime substitution
-to program the high byte as well. As with the other gen2 PHYs,
-skew-calibration entries are not applied.
+v2.2.1 common registers and per-lane tuning. The common-control
+register window starts at offset 0x1000, so the generic common-control
+writes in csiphy_lanes_enable() address the correct registers. As with
+the other gen2 PHYs, skew-calibration entries are not applied.
 
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../qcom/camss/camss-csiphy-3ph-1-0.c         | 142 ++++++++++++++++++
- 1 file changed, 142 insertions(+)
+ .../qcom/camss/camss-csiphy-3ph-1-0.c         | 103 ++++++++++++++++++
+ 1 file changed, 103 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
-index dac8d2ecf799..c588ef64c388 100644
+index dac8d2ecf799..3dbcd7ee745d 100644
 --- a/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
 +++ b/drivers/media/platform/qcom/camss/camss-csiphy-3ph-1-0.c
-@@ -921,6 +921,139 @@ csiphy_lane_regs lane_regs_x1e80100[] = {
+@@ -921,6 +921,103 @@ csiphy_lane_regs lane_regs_x1e80100[] = {
  	{0x0C64, 0x7F, 0x00, CSIPHY_SKEW_CAL},
  };
  
@@ -127,58 +123,12 @@ index dac8d2ecf799..c588ef64c388 100644
 +	{0x0C20, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
 +	{0x0C08, 0x19, 0x00, CSIPHY_SETTLE_CNT_LOWER_BYTE},
 +	{0x0C10, 0x52, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0268, 0xF1, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0294, 0x01, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0278, 0x58, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0288, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x026C, 0x05, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x028C, 0x37, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0270, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0274, 0x03, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0668, 0xF1, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0694, 0x01, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0678, 0x58, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0688, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x066C, 0x05, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x068C, 0x37, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0670, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0674, 0x03, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A68, 0xF1, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A94, 0x01, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A78, 0x58, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A88, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A6C, 0x05, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A8C, 0x37, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A70, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A74, 0x03, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x020C, 0x66, 0x00, CSIPHY_SETTLE_CNT_LOWER_BYTE},
-+	{0x0208, 0x00, 0x00, CSIPHY_SETTLE_CNT_HIGHER_BYTE},
-+	{0x0210, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0214, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x060C, 0x66, 0x00, CSIPHY_SETTLE_CNT_LOWER_BYTE},
-+	{0x0608, 0x00, 0x00, CSIPHY_SETTLE_CNT_HIGHER_BYTE},
-+	{0x0610, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0614, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A0C, 0x66, 0x00, CSIPHY_SETTLE_CNT_LOWER_BYTE},
-+	{0x0A08, 0x00, 0x00, CSIPHY_SETTLE_CNT_HIGHER_BYTE},
-+	{0x0A10, 0x00, 0x00, CSIPHY_DEFAULT_PARAMS},
-+	{0x0A14, 0x20, 0x00, CSIPHY_DEFAULT_PARAMS},
 +};
 +
  static void csiphy_hw_version_read(struct csiphy_device *csiphy,
  				   struct device *dev)
  {
-@@ -1096,6 +1229,9 @@ static void csiphy_gen2_config_lanes(struct csiphy_device *csiphy,
- 		case CSIPHY_SETTLE_CNT_LOWER_BYTE:
- 			val = settle_cnt & 0xff;
- 			break;
-+		case CSIPHY_SETTLE_CNT_HIGHER_BYTE:
-+			val = (settle_cnt >> 8) & 0xff;
-+			break;
- 		case CSIPHY_SKEW_CAL:
- 			/* TODO: support application of skew from dt flag */
- 			continue;
-@@ -1133,6 +1269,7 @@ static bool csiphy_is_gen2(u32 version)
+@@ -1133,6 +1230,7 @@ static bool csiphy_is_gen2(u32 version)
  	case CAMSS_6150:
  	case CAMSS_6350:
  	case CAMSS_7280:
@@ -186,7 +136,7 @@ index dac8d2ecf799..c588ef64c388 100644
  	case CAMSS_8250:
  	case CAMSS_8280XP:
  	case CAMSS_8300:
-@@ -1230,6 +1367,11 @@ static int csiphy_init(struct csiphy_device *csiphy)
+@@ -1230,6 +1328,11 @@ static int csiphy_init(struct csiphy_device *csiphy)
  		regs->lane_regs = &lane_regs_sm6350[0];
  		regs->lane_array_size = ARRAY_SIZE(lane_regs_sm6350);
  		break;

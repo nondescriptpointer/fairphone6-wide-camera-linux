@@ -1,4 +1,4 @@
-From 91e48de2fb54e3cfb768b7fa747f43204b4d8265 Mon Sep 17 00:00:00 2001
+From d229c71e3f0f47bba2c73eddd83faf09e5e9e48e Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:41:52 +0200
 Subject: [PATCH 5/5] media: qcom: camss: Add SM7635 resources and compatible

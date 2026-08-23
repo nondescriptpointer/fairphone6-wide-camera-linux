@@ -1,6 +1,6 @@
-From 91e48de2fb54e3cfb768b7fa747f43204b4d8265 Mon Sep 17 00:00:00 2001
+From d229c71e3f0f47bba2c73eddd83faf09e5e9e48e Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 23 Aug 2026 17:54:05 +0200
+Date: Sun, 23 Aug 2026 18:20:22 +0200
 Subject: [PATCH 0/5] *** SUBJECT HERE ***
 
 *** BLURB HERE ***
@@ -13,11 +13,11 @@ Thomas Colliers (5):
   media: qcom: camss: Add SM7635 resources and compatible
 
  .../bindings/media/qcom,milos-camss.yaml      | 291 ++++++++++++++++++
- .../qcom/camss/camss-csiphy-3ph-1-0.c         | 142 +++++++++
+ .../qcom/camss/camss-csiphy-3ph-1-0.c         | 103 +++++++
  .../media/platform/qcom/camss/camss-vfe-340.c | 124 +++++---
  drivers/media/platform/qcom/camss/camss-vfe.c |   2 +
  drivers/media/platform/qcom/camss/camss.c     | 259 ++++++++++++++++
  drivers/media/platform/qcom/camss/camss.h     |   1 +
- 6 files changed, 772 insertions(+), 47 deletions(-)
+ 6 files changed, 733 insertions(+), 47 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
 
