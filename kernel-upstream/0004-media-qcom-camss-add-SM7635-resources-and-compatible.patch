@@ -23,7 +23,6 @@ The soc_ahb clock gates the register-access AHB bus and is required for
 the ISP registers to be reachable.
 
 Assisted-by: pi:claude-opus-5
-Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/camss.c | 250 ++++++++++++++++++++++

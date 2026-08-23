@@ -7,7 +7,6 @@ Document the camera subsystem on SM7635 (Milos), comprising four
 CSIPHY, three CSID and three TFE instances.
 
 Assisted-by: pi:claude-opus-5
-Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../bindings/media/qcom,milos-camss.yaml      | 278 ++++++++++++++++++

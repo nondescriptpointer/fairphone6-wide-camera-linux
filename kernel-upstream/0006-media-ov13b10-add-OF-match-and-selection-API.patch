@@ -11,7 +11,6 @@ area through the V4L2 selection API. This lets userspace determine the
 sensor's pixel-array geometry and crop bounds.
 
 Assisted-by: pi:claude-opus-5
-Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/i2c/ov13b10.c | 40 +++++++++++++++++++++++++++++++++++++

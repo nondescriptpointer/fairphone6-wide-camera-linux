@@ -19,7 +19,6 @@ to program the high byte as well. As with the other gen2 PHYs,
 skew-calibration entries are not applied.
 
 Assisted-by: pi:claude-opus-5
-Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../qcom/camss/camss-csiphy-3ph-1-0.c         | 142 ++++++++++++++++++

@@ -21,7 +21,6 @@ and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
 AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
 
 Assisted-by: pi:claude-opus-5
-Assisted-by: pi:gpt-5.6-sol
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../boot/dts/qcom/milos-fairphone-fp6.dts     |  41 +++++-
