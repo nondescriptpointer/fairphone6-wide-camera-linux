@@ -1,4 +1,4 @@
-From d229c71e3f0f47bba2c73eddd83faf09e5e9e48e Mon Sep 17 00:00:00 2001
+From 49e5d7ccd482221b3880690540a4b77f28fad67a Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:41:52 +0200
 Subject: [PATCH 5/5] media: qcom: camss: Add SM7635 resources and compatible
@@ -25,14 +25,14 @@ Assisted-by: pi:claude-opus-5
 Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- drivers/media/platform/qcom/camss/camss.c | 259 ++++++++++++++++++++++
- 1 file changed, 259 insertions(+)
+ drivers/media/platform/qcom/camss/camss.c | 262 ++++++++++++++++++++++
+ 1 file changed, 262 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
-index 2123f6388e3d..f8bdc90128d9 100644
+index 2123f6388e3d..8e78a4cd1c26 100644
 --- a/drivers/media/platform/qcom/camss/camss.c
 +++ b/drivers/media/platform/qcom/camss/camss.c
-@@ -1950,6 +1950,252 @@ static const struct resources_icc icc_res_sm6350[] = {
+@@ -1950,6 +1950,255 @@ static const struct resources_icc icc_res_sm6350[] = {
  	},
  };
  
@@ -207,7 +207,8 @@ index 2123f6388e3d..f8bdc90128d9 100644
 +		.vfe = {
 +			.line_num = 3,
 +			.hw_ops = &vfe_ops_340,
-+			.formats_rdi = &vfe_formats_rdi_845
++			.formats_rdi = &vfe_formats_rdi_845,
++			.formats_pix = &vfe_formats_pix_845
 +		}
 +	},
 +
@@ -233,7 +234,8 @@ index 2123f6388e3d..f8bdc90128d9 100644
 +		.vfe = {
 +			.line_num = 3,
 +			.hw_ops = &vfe_ops_340,
-+			.formats_rdi = &vfe_formats_rdi_845
++			.formats_rdi = &vfe_formats_rdi_845,
++			.formats_pix = &vfe_formats_pix_845
 +		}
 +	},
 +
@@ -259,7 +261,8 @@ index 2123f6388e3d..f8bdc90128d9 100644
 +		.vfe = {
 +			.line_num = 3,
 +			.hw_ops = &vfe_ops_340,
-+			.formats_rdi = &vfe_formats_rdi_845
++			.formats_rdi = &vfe_formats_rdi_845,
++			.formats_pix = &vfe_formats_pix_845
 +		}
 +	},
 +};
@@ -285,7 +288,7 @@ index 2123f6388e3d..f8bdc90128d9 100644
  static const struct camss_subdev_resources csiphy_res_8250[] = {
  	/* CSIPHY0 */
  	{
-@@ -5655,6 +5901,18 @@ static const struct camss_resources sm6350_resources = {
+@@ -5655,6 +5904,18 @@ static const struct camss_resources sm6350_resources = {
  	.vfe_num = ARRAY_SIZE(vfe_res_sm6350),
  };
  
@@ -304,7 +307,7 @@ index 2123f6388e3d..f8bdc90128d9 100644
  static const struct camss_resources sm8250_resources = {
  	.version = CAMSS_8250,
  	.pd_name = "top",
-@@ -5740,6 +5998,7 @@ static const struct camss_resources x1e80100_resources = {
+@@ -5740,6 +6001,7 @@ static const struct camss_resources x1e80100_resources = {
  };
  
  static const struct of_device_id camss_dt_match[] = {
