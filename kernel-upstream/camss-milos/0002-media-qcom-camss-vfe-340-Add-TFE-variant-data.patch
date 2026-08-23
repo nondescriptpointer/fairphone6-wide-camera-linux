@@ -1,4 +1,4 @@
-From 7af81e322aeb4c85d83b69a6643425f047eb8281 Mon Sep 17 00:00:00 2001
+From 612e890866f214799daa469079055ed4e7953bd4 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:39:50 +0200
 Subject: [PATCH 2/5] media: qcom: camss: vfe-340: Add TFE variant data
@@ -19,9 +19,9 @@ bit per. On TFE530 both happen to be 10, so the bug is latent, but the
 loop bound belongs to the hardware description and not to the driver's
 list of names. Keeping the terminator around would leave that trap in
 place for the next variant and for the next loop over clients, and the
-resulting under-reporting is silent. The bound now comes from the variant 
-data, and enum tfe_client is left describing only the clients the driver
-actually programs.
+resulting under-reporting is silent. The bound now comes from the
+variant data, and enum tfe_client is left describing only the clients
+the driver actually programs.
 
 No functional change intended. tfe530_variant reproduces the previous
 constants exactly; the generated code differs only in unsigned rather
@@ -29,6 +29,7 @@ than signed extension of the register offsets and in the association
 of a constant addition, both of which compute the same addresses.
 
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  .../media/platform/qcom/camss/camss-vfe-340.c | 112 ++++++++++--------

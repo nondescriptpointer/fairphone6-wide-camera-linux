@@ -1,4 +1,4 @@
-From a194bb22f07d603285875d8b874883cd32326282 Mon Sep 17 00:00:00 2001
+From 4f65b84ebe3fc2a143c0b67fcfb61b442159d9f1 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:41:25 +0200
 Subject: [PATCH 3/5] media: qcom: camss: vfe-340: Add TFE665 variant
@@ -27,6 +27,7 @@ TFE665 also writes RDI rows on a 16-byte boundary, so select the
 existing 16-byte bytesperline alignment for CAMSS_7635.
 
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
  drivers/media/platform/qcom/camss/camss-vfe-340.c | 14 +++++++++++++-
