@@ -1,0 +1,37 @@
+From ce9bcd1ae6949a17e2362508f5a557b3683eebea Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 23 Aug 2026 18:46:42 +0200
+Subject: [PATCH 2/3] media: ov13b10: Add OF match
+
+The driver only matches on ACPI, so it cannot probe on Device Tree
+platforms. Add an OF device ID table for the ovti,ov13b10 compatible.
+
+Assisted-by: pi:claude-opus-5
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ drivers/media/i2c/ov13b10.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/media/i2c/ov13b10.c b/drivers/media/i2c/ov13b10.c
+index b0d34141a13a..26033a769cc7 100644
+--- a/drivers/media/i2c/ov13b10.c
++++ b/drivers/media/i2c/ov13b10.c
+@@ -1705,11 +1705,18 @@ static const struct acpi_device_id ov13b10_acpi_ids[] = {
+ MODULE_DEVICE_TABLE(acpi, ov13b10_acpi_ids);
+ #endif
+ 
++static const struct of_device_id ov13b10_of_match[] = {
++	{ .compatible = "ovti,ov13b10" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, ov13b10_of_match);
++
+ static struct i2c_driver ov13b10_i2c_driver = {
+ 	.driver = {
+ 		.name = "ov13b10",
+ 		.pm = pm_ptr(&ov13b10_pm_ops),
+ 		.acpi_match_table = ACPI_PTR(ov13b10_acpi_ids),
++		.of_match_table = ov13b10_of_match,
+ 	},
+ 	.probe = ov13b10_probe,
+ 	.remove = ov13b10_remove,

@@ -1,0 +1,79 @@
+From 55ea18314e21283912c9db544e628110061b67e8 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 23 Aug 2026 18:47:28 +0200
+Subject: [PATCH 3/3] media: ov13b10: Report the active pixel array area
+
+Implement get_selection so userspace can discover the sensor geometry
+rather than inferring it from the largest supported mode. The OV13B
+product brief documents an active array of 4208x3120, which is what
+V4L2_SEL_TGT_CROP_BOUNDS and V4L2_SEL_TGT_CROP_DEFAULT now report.
+
+V4L2_SEL_TGT_CROP is deliberately left out. The modes do not all read
+the same field of view: 4160x3120, 4160x2340 and 2080x1170 read the
+same full analogue window as full resolution and then crop in the ISP,
+1364x768 narrows the analogue window as well, and three of the modes
+bin 2x2, so the read-out area is twice the output size. Reporting a
+single static rectangle would be wrong for four of the six four-lane
+modes, and the per-mode rectangles cannot be derived with confidence
+from the register lists alone. A target that returns -EINVAL can start
+working later without breaking users, so this is left for a patch that
+can establish and test the real values.
+
+V4L2_SEL_TGT_NATIVE_SIZE is left out for the same reason: no public
+documentation gives the total array size, and the full resolution mode
+reads 4240 columns, which is more than the 4224 that an 8 pixel border
+around the active area would suggest.
+
+Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ drivers/media/i2c/ov13b10.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/drivers/media/i2c/ov13b10.c b/drivers/media/i2c/ov13b10.c
+index 26033a769cc7..f8c3e63acc5e 100644
+--- a/drivers/media/i2c/ov13b10.c
++++ b/drivers/media/i2c/ov13b10.c
+@@ -65,6 +65,12 @@
+ #define OV13B10_DGTL_GAIN_H_SHIFT	10
+ #define OV13B10_DGTL_GAIN_H_MASK	0x3
+ 
++/* Pixel array active area */
++#define OV13B10_PIXEL_ARRAY_LEFT	8
++#define OV13B10_PIXEL_ARRAY_TOP		8
++#define OV13B10_PIXEL_ARRAY_WIDTH	4208
++#define OV13B10_PIXEL_ARRAY_HEIGHT	3120
++
+ /* Test Pattern Control */
+ #define OV13B10_REG_TEST_PATTERN	0x5080
+ #define OV13B10_TEST_PATTERN_ENABLE	BIT(7)
+@@ -1338,10 +1344,28 @@ static const struct v4l2_subdev_video_ops ov13b10_video_ops = {
+ 	.s_stream = ov13b10_set_stream,
+ };
+ 
++static int ov13b10_get_selection(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_selection *sel)
++{
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.left = OV13B10_PIXEL_ARRAY_LEFT;
++		sel->r.top = OV13B10_PIXEL_ARRAY_TOP;
++		sel->r.width = OV13B10_PIXEL_ARRAY_WIDTH;
++		sel->r.height = OV13B10_PIXEL_ARRAY_HEIGHT;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct v4l2_subdev_pad_ops ov13b10_pad_ops = {
+ 	.enum_mbus_code = ov13b10_enum_mbus_code,
+ 	.get_fmt = ov13b10_get_pad_format,
+ 	.set_fmt = ov13b10_set_pad_format,
++	.get_selection = ov13b10_get_selection,
+ 	.enum_frame_size = ov13b10_enum_frame_size,
+ };
+ 
