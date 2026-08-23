@@ -1,8 +1,7 @@
-From fc43e1144b9d1a554f1124013896877170ddeb3d Mon Sep 17 00:00:00 2001
+From b8c81474bccbd96a440693787ad6217379ba1a9b Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
-Subject: [PATCH 7/7] arm64: dts: qcom: milos: add CAMSS and FP6 ultra-wide
- camera
+Subject: [PATCH] arm64: dts: qcom: milos: Add CAMSS and FP6 ultra-wide camera
 
 Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
 GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi.
@@ -28,7 +27,7 @@ Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
  2 files changed, 175 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index ebdca0e2d2f3..172a53588a3f 100644
+index bb3b67e2fd01..3182c9bbc4df 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 @@ -561,7 +561,11 @@ eeprom@50 {
@@ -87,10 +86,10 @@ index ebdca0e2d2f3..172a53588a3f 100644
  
  &cci1 {
 diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
-index 8c9232988953..d639ce931442 100644
+index aad8bf678916..aac8a7427a05 100644
 --- a/arch/arm64/boot/dts/qcom/milos.dtsi
 +++ b/arch/arm64/boot/dts/qcom/milos.dtsi
-@@ -1976,6 +1976,120 @@ camcc: clock-controller@adb0000 {
+@@ -1954,6 +1954,120 @@ videocc: clock-controller@aaf0000 {
  			#power-domain-cells = <1>;
  		};
  
@@ -208,10 +207,10 @@ index 8c9232988953..d639ce931442 100644
 +			};
 +		};
 +
- 		dispcc: clock-controller@af00000 {
- 			compatible = "qcom,milos-dispcc";
- 			reg = <0x0 0x0af00000 0x0 0x20000>;
-@@ -2208,6 +2322,27 @@ data-pins {
+ 		cci0: cci@ac15000 {
+ 			compatible = "qcom,milos-cci", "qcom,msm8996-cci";
+ 			reg = <0x0 0x0ac15000 0x0 0x1000>;
+@@ -2474,6 +2588,27 @@ data-pins {
  				};
  			};
  
@@ -239,6 +238,3 @@ index 8c9232988953..d639ce931442 100644
  			cci0_0_default: cci0-0-default-state {
  				sda-pins {
  					pins = "gpio88";
--- 
-2.55.0
-

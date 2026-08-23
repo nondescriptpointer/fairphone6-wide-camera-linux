@@ -1,0 +1,17 @@
+From d8a6e990947768f4d9fd1d180389483bac6918f1 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 23 Aug 2026 14:48:21 +0200
+Subject: [PATCH 0/2] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Thomas Colliers (2):
+  media: dt-bindings: ovti,ov13b10: Add OmniVision OV13B10
+  media: ov13b10: Add OF match and selection API
+
+ .../bindings/media/i2c/ovti,ov13b10.yaml      | 112 ++++++++++++++++++
+ MAINTAINERS                                   |   1 +
+ drivers/media/i2c/ov13b10.c                   |  40 +++++++
+ 3 files changed, 153 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/i2c/ovti,ov13b10.yaml
+

@@ -1,0 +1,25 @@
+From 32385fccb19f47567d79aaed4fa20edf9be5052f Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 23 Aug 2026 14:48:21 +0200
+Subject: [PATCH 0/4] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Thomas Colliers (4):
+  media: dt-bindings: camss: Add qcom,milos-camss
+  media: qcom: camss: Add TFE665 (VFE) support for milos
+  media: qcom: camss: Add CSIPHY v2.2.1 (milos) lane config
+  media: qcom: camss: Add SM7635 resources and compatible
+
+ .../bindings/media/qcom,milos-camss.yaml      | 278 +++++++++++++++
+ drivers/media/platform/qcom/camss/Makefile    |   1 +
+ .../qcom/camss/camss-csiphy-3ph-1-0.c         | 142 ++++++++
+ .../media/platform/qcom/camss/camss-vfe-665.c | 321 ++++++++++++++++++
+ drivers/media/platform/qcom/camss/camss-vfe.c |   2 +
+ drivers/media/platform/qcom/camss/camss-vfe.h |   1 +
+ drivers/media/platform/qcom/camss/camss.c     | 250 ++++++++++++++
+ drivers/media/platform/qcom/camss/camss.h     |   1 +
+ 8 files changed, 996 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
+ create mode 100644 drivers/media/platform/qcom/camss/camss-vfe-665.c
+

@@ -1,7 +1,7 @@
-From 4a26f8f6705a47ff115e1f3ce7c0c01e51f923ee Mon Sep 17 00:00:00 2001
+From ffc9539297c2dd7312233bb608a450148623c81f Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
-Subject: [PATCH 2/7] media: qcom: camss: add TFE665 (VFE) support for milos
+Subject: [PATCH 2/4] media: qcom: camss: Add TFE665 (VFE) support for milos
 
 Add a vfe-665 op set for the TFE665 ISP found on the Qualcomm milos
 (SM7635) SoC. For the RDI capture path implemented by camss-vfe-340.c,
@@ -413,6 +413,3 @@ index 93d691c8ac63..8e494a89040d 100644
  	CAMSS_8x16,
  	CAMSS_8x39,
  	CAMSS_8x53,
--- 
-2.55.0
-

@@ -1,7 +1,7 @@
-From 4e8911f293e4cc7cf6f312f2b919b4a8cf270450 Mon Sep 17 00:00:00 2001
+From bb1b5e8aa904c375938ddbaa59e4a552b395c0ef Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
-Subject: [PATCH 5/7] dt-bindings: media: i2c: add OmniVision OV13B10
+Subject: [PATCH 1/2] media: dt-bindings: ovti,ov13b10: Add OmniVision OV13B10
 
 Document the OV13B10 image sensor, its clock and supplies, optional
 reset line, and two- or four-lane CSI-2 interface.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 
 diff --git a/Documentation/devicetree/bindings/media/i2c/ovti,ov13b10.yaml b/Documentation/devicetree/bindings/media/i2c/ovti,ov13b10.yaml
 new file mode 100644
-index 000000000000..4073b822621e
+index 000000000000..c0ffdc3e68b5
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/media/i2c/ovti,ov13b10.yaml
 @@ -0,0 +1,112 @@
@@ -29,7 +29,7 @@ index 000000000000..4073b822621e
 +title: OmniVision OV13B10 CMOS Sensor
 +
 +maintainers:
-+  - Arec Kao <arec.kao@intel.com>
++  - Thomas Colliers <mail@thomascolliers.com>
 +
 +description:
 +  The OmniVision OV13B10 is a 13-megapixel CMOS image sensor with a
@@ -133,10 +133,10 @@ index 000000000000..4073b822621e
 +    };
 +...
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 8014b9f8253e..bb669c668272 100644
+index 3785b8c1de0a..cbf7a63bab16 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -19963,6 +19963,7 @@ M:	Arec Kao <arec.kao@intel.com>
+@@ -19966,6 +19966,7 @@ M:	Arec Kao <arec.kao@intel.com>
  L:	linux-media@vger.kernel.org
  S:	Maintained
  T:	git git://linuxtv.org/media.git
@@ -144,6 +144,3 @@ index 8014b9f8253e..bb669c668272 100644
  F:	drivers/media/i2c/ov13b10.c
  
  OMNIVISION OV2680 SENSOR DRIVER
--- 
-2.55.0
-

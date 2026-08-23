@@ -1,7 +1,7 @@
-From 4e3517635e6b52adbf7a2a9deb9149e60e06f601 Mon Sep 17 00:00:00 2001
+From 32385fccb19f47567d79aaed4fa20edf9be5052f Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
-Subject: [PATCH 4/7] media: qcom: camss: add SM7635 resources and compatible
+Subject: [PATCH 4/4] media: qcom: camss: Add SM7635 resources and compatible
 
 Add the resources for the SM7635 CAMSS complex, comprising four CSIPHY
 v2.2.1, three CSID665 and three TFE665 instances, and expose it through
@@ -303,6 +303,3 @@ index 2123f6388e3d..e9d1992a6607 100644
  	{ .compatible = "qcom,msm8916-camss", .data = &msm8916_resources },
  	{ .compatible = "qcom,msm8939-camss", .data = &msm8939_resources },
  	{ .compatible = "qcom,msm8953-camss", .data = &msm8953_resources },
--- 
-2.55.0
-
