@@ -1,16 +1,22 @@
-From b8c81474bccbd96a440693787ad6217379ba1a9b Mon Sep 17 00:00:00 2001
+From 9c052f749f4b1b7aeb6a1da9ff246d495d0024b9 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH] arm64: dts: qcom: milos: Add CAMSS and FP6 ultra-wide camera
 
 Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
-GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi.
+GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi. The CSI ports
+carry only their reg in the SoC file; the endpoint belongs to whichever
+board wires a sensor up.
 
 On the Fairphone 6 enable the OV13B10 ultra-wide sensor and its focus
-VCM. The exact actuator is not documented: the schematic only shows
-AFVDD, AF_GND and the shared CCI I2C bus entering the camera module, and
-the vendor DT uses a generic qcom,actuator node. The device responds to
-the DW9714 10-bit direct-DAC protocol used by the mainline driver, and
+VCM, and hook the sensor to CSIPHY1. The CSIPHYs are supplied by
+vreg_l2b (0.9V) and vreg_l4b (1.2V), the same pair the vendor device
+tree uses for every CSIPHY on this SoC.
+
+The exact actuator is not documented: the schematic only shows AFVDD,
+AF_GND and the shared CCI I2C bus entering the camera module, and the
+vendor DT uses a generic qcom,actuator node. The device responds to the
+DW9714 10-bit direct-DAC protocol used by the mainline driver, and
 focus control works, so using the dongwoon,dw9714 compatible.
 
 Pin assignments are taken from the FP6 schematics: the sensor sits on
@@ -20,17 +26,26 @@ and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
 AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
 
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../boot/dts/qcom/milos-fairphone-fp6.dts     |  41 +++++-
- arch/arm64/boot/dts/qcom/milos.dtsi           | 135 ++++++++++++++++++
- 2 files changed, 175 insertions(+), 1 deletion(-)
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     |  55 +++++++-
+ arch/arm64/boot/dts/qcom/milos.dtsi           | 130 ++++++++++++++++++
+ 2 files changed, 184 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index bb3b67e2fd01..3182c9bbc4df 100644
+index bb3b67e2fd01..355c218a0c27 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-@@ -561,7 +561,11 @@ eeprom@50 {
+@@ -8,6 +8,7 @@
+ #define PMIV0104_SID 7
+ 
+ #include <dt-bindings/leds/common.h>
++#include <dt-bindings/media/video-interfaces.h>
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include "milos.dtsi"
+@@ -561,7 +562,11 @@ eeprom@50 {
  
  &cci0_i2c1 {
  	/* Awinic AW86017 VCM @ 0x0c */
@@ -43,7 +58,7 @@ index bb3b67e2fd01..3182c9bbc4df 100644
  
  	eeprom@52 {
  		compatible = "puya,p24c128f", "atmel,24c128";
-@@ -569,6 +573,41 @@ eeprom@52 {
+@@ -569,6 +574,54 @@ eeprom@52 {
  		vcc-supply = <&vreg_l6p>;
  		read-only;
  	};
@@ -81,15 +96,28 @@ index bb3b67e2fd01..3182c9bbc4df 100644
 +};
 +
 +&camss {
++	vdd-csiphy-0p9-supply = <&vreg_l2b>;
++	vdd-csiphy-1p2-supply = <&vreg_l4b>;
++
 +	status = "okay";
++
++	ports {
++		port@1 {
++			csiphy1_ep: endpoint {
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&ov13b10_ep>;
++			};
++		};
++	};
  };
  
  &cci1 {
 diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
-index aad8bf678916..aac8a7427a05 100644
+index aad8bf678916..e58de92210bd 100644
 --- a/arch/arm64/boot/dts/qcom/milos.dtsi
 +++ b/arch/arm64/boot/dts/qcom/milos.dtsi
-@@ -1954,6 +1954,120 @@ videocc: clock-controller@aaf0000 {
+@@ -1954,6 +1954,115 @@ videocc: clock-controller@aaf0000 {
  			#power-domain-cells = <1>;
  		};
  
@@ -190,11 +218,6 @@ index aad8bf678916..aac8a7427a05 100644
 +
 +				port@1 {
 +					reg = <1>;
-+
-+					csiphy1_ep: endpoint {
-+						remote-endpoint = <&ov13b10_ep>;
-+						data-lanes = <0 1 2 3>;
-+					};
 +				};
 +
 +				port@2 {
@@ -210,7 +233,7 @@ index aad8bf678916..aac8a7427a05 100644
  		cci0: cci@ac15000 {
  			compatible = "qcom,milos-cci", "qcom,msm8996-cci";
  			reg = <0x0 0x0ac15000 0x0 0x1000>;
-@@ -2474,6 +2588,27 @@ data-pins {
+@@ -2474,6 +2583,27 @@ data-pins {
  				};
  			};
  

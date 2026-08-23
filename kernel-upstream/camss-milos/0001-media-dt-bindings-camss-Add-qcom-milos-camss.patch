@@ -1,4 +1,4 @@
-From faf040529fceab76f91d6e7d635237429894beb8 Mon Sep 17 00:00:00 2001
+From a143ce2a68250c5475af3fc6a35019c3599ff930 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
 Subject: [PATCH 1/5] media: dt-bindings: camss: Add qcom,milos-camss
@@ -6,19 +6,30 @@ Subject: [PATCH 1/5] media: dt-bindings: camss: Add qcom,milos-camss
 Document the camera subsystem on SM7635 (Milos), comprising four
 CSIPHY, three CSID and three TFE instances.
 
+All four CSIPHYs are fed by the same two rails, so document
+vdd-csiphy-0p9-supply and vdd-csiphy-1p2-supply as required
+properties.
+
+Both are named after their voltage rather than after a phy/pll split,
+following qcom,x1e80100-camss.yaml. The downstream device tree
+identifies the rails by voltage only, so which of the two feeds the
+PLL is not known here, and a vdda-phy/vdda-pll spelling would encode
+that guess into the binding.
+
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../bindings/media/qcom,milos-camss.yaml      | 278 ++++++++++++++++++
- 1 file changed, 278 insertions(+)
+ .../bindings/media/qcom,milos-camss.yaml      | 291 ++++++++++++++++++
+ 1 file changed, 291 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
 
 diff --git a/Documentation/devicetree/bindings/media/qcom,milos-camss.yaml b/Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
 new file mode 100644
-index 000000000000..83c5d93948c4
+index 000000000000..fc9331cecb29
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,291 @@
 +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +%YAML 1.2
 +---
@@ -133,6 +144,14 @@ index 000000000000..83c5d93948c4
 +    items:
 +      - description: CAMSS top GDSC
 +
++  vdd-csiphy-0p9-supply:
++    description:
++      0.9V supply to a PHY.
++
++  vdd-csiphy-1p2-supply:
++    description:
++      1.2V supply to a PHY.
++
 +  ports:
 +    $ref: /schemas/graph.yaml#/properties/ports
 +
@@ -175,6 +194,8 @@ index 000000000000..83c5d93948c4
 +  - interconnect-names
 +  - iommus
 +  - power-domains
++  - vdd-csiphy-0p9-supply
++  - vdd-csiphy-1p2-supply
 +  - ports
 +
 +additionalProperties: false
@@ -273,6 +294,9 @@ index 000000000000..83c5d93948c4
 +                     <&apps_smmu 0x08a0 0x20>;
 +
 +            power-domains = <&camcc CAM_CC_CAMSS_TOP_GDSC>;
++
++            vdd-csiphy-0p9-supply = <&vreg_l2b>;
++            vdd-csiphy-1p2-supply = <&vreg_l4b>;
 +
 +            ports {
 +                #address-cells = <1>;

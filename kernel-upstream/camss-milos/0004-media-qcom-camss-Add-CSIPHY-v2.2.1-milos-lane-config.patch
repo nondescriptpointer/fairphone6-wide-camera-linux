@@ -1,4 +1,4 @@
-From a5fb3e45596a35673dc6a89848def103a74dcdde Mon Sep 17 00:00:00 2001
+From debeba128500d86ff31caa95b8f4dc96754d16a2 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:16 +0200
 Subject: [PATCH 4/5] media: qcom: camss: Add CSIPHY v2.2.1 (milos) lane config

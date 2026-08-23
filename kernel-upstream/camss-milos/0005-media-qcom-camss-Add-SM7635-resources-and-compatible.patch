@@ -1,10 +1,15 @@
-From da4ff908a82afeda7b246e96cad5e9dfd7090ee1 Mon Sep 17 00:00:00 2001
+From 91e48de2fb54e3cfb768b7fa747f43204b4d8265 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:41:52 +0200
 Subject: [PATCH 5/5] media: qcom: camss: Add SM7635 resources and compatible
 
 Add the CSIPHY, CSID and VFE resources for the Qualcomm milos (SM7635)
 SoC, along with the qcom,milos-camss compatible.
+
+Each CSIPHY votes a load on the two PHY supplies for as long as it is
+streaming. The values come from the downstream volcano-camera.dtsi,
+which reserves 98480 uA on the 0.9V rail and 17920 uA on the 1.2V rail
+per PHY.
 
 Only the RDI lines are wired up. The PIX path drives the pixel
 processing crop block, which on TFE530 is the post-BDS crop at 0x2800
@@ -14,27 +19,30 @@ CAMIF moves from 0x200 to 0x400. Exposing a PIX video device before
 that path has been worked out and tested on hardware would only offer
 a node that cannot produce frames, so line_num stays at 3.
 
-Tested on a Fairphone 6 (SM7635) with an OmniVision OV13B10 on CSIPHY0,
-capturing RAW10 frames through all three RDI lines.
+Tested on a Fairphone 6 (SM7635) with an OmniVision OV13B10 on CSIPHY1.
 
 Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- drivers/media/platform/qcom/camss/camss.c | 247 ++++++++++++++++++++++
- 1 file changed, 247 insertions(+)
+ drivers/media/platform/qcom/camss/camss.c | 259 ++++++++++++++++++++++
+ 1 file changed, 259 insertions(+)
 
 diff --git a/drivers/media/platform/qcom/camss/camss.c b/drivers/media/platform/qcom/camss/camss.c
-index 2123f6388e3d..d456ca0a0270 100644
+index 2123f6388e3d..f8bdc90128d9 100644
 --- a/drivers/media/platform/qcom/camss/camss.c
 +++ b/drivers/media/platform/qcom/camss/camss.c
-@@ -1950,6 +1950,240 @@ static const struct resources_icc icc_res_sm6350[] = {
+@@ -1950,6 +1950,252 @@ static const struct resources_icc icc_res_sm6350[] = {
  	},
  };
  
 +static const struct camss_subdev_resources csiphy_res_7635[] = {
 +	/* CSIPHY0 */
 +	{
-+		.regulators = {},
++		.regulators = {
++			{ .supply = "vdd-csiphy-0p9", .init_load_uA = 98480 },
++			{ .supply = "vdd-csiphy-1p2", .init_load_uA = 17920 }
++		},
 +		.clock = { "cpas_ahb", "soc_ahb", "csiphy0",
 +			   "csiphy0_timer" },
 +		.clock_rate = { { 0 },
@@ -52,7 +60,10 @@ index 2123f6388e3d..d456ca0a0270 100644
 +
 +	/* CSIPHY1 */
 +	{
-+		.regulators = {},
++		.regulators = {
++			{ .supply = "vdd-csiphy-0p9", .init_load_uA = 98480 },
++			{ .supply = "vdd-csiphy-1p2", .init_load_uA = 17920 }
++		},
 +		.clock = { "cpas_ahb", "soc_ahb", "csiphy1",
 +			   "csiphy1_timer" },
 +		.clock_rate = { { 0 },
@@ -70,7 +81,10 @@ index 2123f6388e3d..d456ca0a0270 100644
 +
 +	/* CSIPHY2 */
 +	{
-+		.regulators = {},
++		.regulators = {
++			{ .supply = "vdd-csiphy-0p9", .init_load_uA = 98480 },
++			{ .supply = "vdd-csiphy-1p2", .init_load_uA = 17920 }
++		},
 +		.clock = { "cpas_ahb", "soc_ahb", "csiphy2",
 +			   "csiphy2_timer" },
 +		.clock_rate = { { 0 },
@@ -88,7 +102,10 @@ index 2123f6388e3d..d456ca0a0270 100644
 +
 +	/* CSIPHY3 */
 +	{
-+		.regulators = {},
++		.regulators = {
++			{ .supply = "vdd-csiphy-0p9", .init_load_uA = 98480 },
++			{ .supply = "vdd-csiphy-1p2", .init_load_uA = 17920 }
++		},
 +		.clock = { "cpas_ahb", "soc_ahb", "csiphy3",
 +			   "csiphy3_timer" },
 +		.clock_rate = { { 0 },
@@ -268,7 +285,7 @@ index 2123f6388e3d..d456ca0a0270 100644
  static const struct camss_subdev_resources csiphy_res_8250[] = {
  	/* CSIPHY0 */
  	{
-@@ -5655,6 +5889,18 @@ static const struct camss_resources sm6350_resources = {
+@@ -5655,6 +5901,18 @@ static const struct camss_resources sm6350_resources = {
  	.vfe_num = ARRAY_SIZE(vfe_res_sm6350),
  };
  
@@ -287,7 +304,7 @@ index 2123f6388e3d..d456ca0a0270 100644
  static const struct camss_resources sm8250_resources = {
  	.version = CAMSS_8250,
  	.pd_name = "top",
-@@ -5740,6 +5986,7 @@ static const struct camss_resources x1e80100_resources = {
+@@ -5740,6 +5998,7 @@ static const struct camss_resources x1e80100_resources = {
  };
  
  static const struct of_device_id camss_dt_match[] = {

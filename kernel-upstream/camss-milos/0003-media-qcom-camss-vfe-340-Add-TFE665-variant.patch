@@ -1,4 +1,4 @@
-From 4f65b84ebe3fc2a143c0b67fcfb61b442159d9f1 Mon Sep 17 00:00:00 2001
+From 38ad5ecaac5f5c5fbe21c9b13dd1365ac74e6906 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:41:25 +0200
 Subject: [PATCH 3/5] media: qcom: camss: vfe-340: Add TFE665 variant

@@ -1,4 +1,4 @@
-From 612e890866f214799daa469079055ed4e7953bd4 Mon Sep 17 00:00:00 2001
+From aa8a713568d72aaa0d58dfc6b46903328232f5de Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 15:39:50 +0200
 Subject: [PATCH 2/5] media: qcom: camss: vfe-340: Add TFE variant data
