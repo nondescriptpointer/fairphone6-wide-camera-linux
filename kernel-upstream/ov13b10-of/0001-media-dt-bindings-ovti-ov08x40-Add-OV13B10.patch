@@ -1,4 +1,4 @@
-From a986322b5f54e07cf89febb696963fab88b3aa22 Mon Sep 17 00:00:00 2001
+From 285dac6ea6d16b85ba350789eed6418a4e260879 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
 Subject: [PATCH 1/3] media: dt-bindings: ovti,ov08x40: Add OV13B10
@@ -14,21 +14,21 @@ three supplies and a 560 MHz link frequency only for OV13B10. Preserve the
 existing OV08X40 constraints, including its lane numbering and optional
 supplies.
 
-Keep the OV13B10 lane-count constraint independent of lane indices so
-that the zero-based mapping used on the Fairphone 6 remains valid. Add an
-OV13B10 example and associate its MAINTAINERS entry with the shared file.
+Use the same one-based lane numbering for both sensors, allowing lanes
+1 and 2 or lanes 1 through 4. Add an OV13B10 example and associate its
+MAINTAINERS entry with the shared file.
 
 Link: https://lore.kernel.org/r/10d6863d-7c66-47ad-a683-251f2a40af66@kernel.org/
 Cc: Antoine Bernard <zalnir@proton.me>
 Assisted-by: pi:claude-opus-5
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../bindings/media/i2c/ovti,ov08x40.yaml      | 96 ++++++++++++++++---
+ .../bindings/media/i2c/ovti,ov08x40.yaml      | 75 ++++++++++++++++++-
  MAINTAINERS                                   |  1 +
- 2 files changed, 85 insertions(+), 12 deletions(-)
+ 2 files changed, 72 insertions(+), 4 deletions(-)
 
 diff --git a/Documentation/devicetree/bindings/media/i2c/ovti,ov08x40.yaml b/Documentation/devicetree/bindings/media/i2c/ovti,ov08x40.yaml
-index 552efdf8934f..fc2a5355e285 100644
+index 552efdf8934f..e3d89199f393 100644
 --- a/Documentation/devicetree/bindings/media/i2c/ovti,ov08x40.yaml
 +++ b/Documentation/devicetree/bindings/media/i2c/ovti,ov08x40.yaml
 @@ -5,10 +5,11 @@
@@ -44,7 +44,7 @@ index 552efdf8934f..fc2a5355e285 100644
  
  description: |
    The Omnivision OV08X40 is a 9.2 megapixel, CMOS image sensor which supports:
-@@ -21,12 +22,60 @@ description: |
+@@ -21,12 +22,51 @@ description: |
    - Dynamic defect pixel cancellation
    - Standard SCCB command interface
  
@@ -82,16 +82,7 @@ index 552efdf8934f..fc2a5355e285 100644
 +            endpoint:
 +              additionalProperties: false
 +              properties:
-+                data-lanes:
-+                  oneOf:
-+                    - items:
-+                        - const: 1
-+                        - const: 2
-+                    - items:
-+                        - const: 1
-+                        - const: 2
-+                        - const: 3
-+                        - const: 4
++                data-lanes: true
 +                link-frequencies: true
 +                remote-endpoint: true
 +              required:
@@ -106,7 +97,7 @@ index 552efdf8934f..fc2a5355e285 100644
  
    reg:
      maxItems: 1
-@@ -53,26 +102,21 @@ properties:
+@@ -53,7 +93,7 @@ properties:
      properties:
        endpoint:
          $ref: /schemas/media/video-interfaces.yaml#
@@ -115,22 +106,7 @@ index 552efdf8934f..fc2a5355e285 100644
  
          properties:
            data-lanes:
-             oneOf:
--              - items:
--                  - const: 1
--                  - const: 2
--              - items:
--                  - const: 1
--                  - const: 2
--                  - const: 3
--                  - const: 4
-+              - minItems: 2
-+                maxItems: 2
-+              - minItems: 4
-+                maxItems: 4
-           link-frequencies: true
-           remote-endpoint: true
- 
+@@ -72,7 +112,6 @@ properties:
          required:
            - data-lanes
            - link-frequencies
@@ -138,7 +114,7 @@ index 552efdf8934f..fc2a5355e285 100644
  
  required:
    - compatible
-@@ -117,4 +161,32 @@ examples:
+@@ -117,4 +156,32 @@ examples:
              };
          };
      };
@@ -164,7 +140,7 @@ index 552efdf8934f..fc2a5355e285 100644
 +            port {
 +                ov13b10_out: endpoint {
 +                    remote-endpoint = <&csi_in>;
-+                    data-lanes = <0 1 2 3>;
++                    data-lanes = <1 2 3 4>;
 +                    link-frequencies = /bits/ 64 <560000000>;
 +                };
 +            };

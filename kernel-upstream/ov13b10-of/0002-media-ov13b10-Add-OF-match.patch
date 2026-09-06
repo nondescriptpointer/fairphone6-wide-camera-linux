@@ -1,4 +1,4 @@
-From fa91e33f5512e632c1c862155d02577f3c8a7b7b Mon Sep 17 00:00:00 2001
+From aa668f74566d0dcb298ca19b76dd2a5d55e52f99 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 18:46:42 +0200
 Subject: [PATCH 2/3] media: ov13b10: Add OF match

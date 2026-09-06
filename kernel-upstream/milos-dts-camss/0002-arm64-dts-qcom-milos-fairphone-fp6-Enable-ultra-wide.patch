@@ -1,4 +1,4 @@
-From b09387b0a0f0f1707712ef41368d752b976e01da Mon Sep 17 00:00:00 2001
+From 7c6d69c9731f87a96cc2fdad326095d58034f790 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 2/2] arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide
@@ -31,7 +31,7 @@ Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
  1 file changed, 60 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index bb3b67e2fd01..5bc8abf4ea6c 100644
+index bb3b67e2fd01..2822cc83291f 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 @@ -8,6 +8,7 @@
@@ -101,7 +101,7 @@ index bb3b67e2fd01..5bc8abf4ea6c 100644
 +		port {
 +			ov13b10_ep: endpoint {
 +				remote-endpoint = <&csiphy1_ep>;
-+				data-lanes = <0 1 2 3>;
++				data-lanes = <1 2 3 4>;
 +				link-frequencies = /bits/ 64 <560000000>;
 +			};
 +		};

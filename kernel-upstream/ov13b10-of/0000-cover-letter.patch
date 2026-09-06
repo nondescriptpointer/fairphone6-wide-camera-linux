@@ -1,6 +1,6 @@
-From 7465d29f38b2772d2b6858a4569e427eac11550a Mon Sep 17 00:00:00 2001
+From 302ac1962c3893d8fb2f8883d1811111327398e3 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 6 Sep 2026 12:15:16 +0200
+Date: Sun, 6 Sep 2026 12:24:06 +0200
 Subject: [PATCH 0/3] *** SUBJECT HERE ***
 
 *** BLURB HERE ***
@@ -10,8 +10,8 @@ Thomas Colliers (3):
   media: ov13b10: Add OF match
   media: ov13b10: Report the active pixel array area
 
- .../bindings/media/i2c/ovti,ov08x40.yaml      | 96 ++++++++++++++++---
+ .../bindings/media/i2c/ovti,ov08x40.yaml      | 75 ++++++++++++++++++-
  MAINTAINERS                                   |  1 +
- drivers/media/i2c/ov13b10.c                   | 31 ++++++
- 3 files changed, 116 insertions(+), 12 deletions(-)
+ drivers/media/i2c/ov13b10.c                   | 31 ++++++++
+ 3 files changed, 103 insertions(+), 4 deletions(-)
 
