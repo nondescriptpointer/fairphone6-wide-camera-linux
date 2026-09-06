@@ -1,4 +1,4 @@
-From 302ac1962c3893d8fb2f8883d1811111327398e3 Mon Sep 17 00:00:00 2001
+From 8fd452c692ef6f23966f3959a94bc8275cca14f5 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 18:47:28 +0200
 Subject: [PATCH 3/3] media: ov13b10: Report the active pixel array area

@@ -1,4 +1,4 @@
-From a143ce2a68250c5475af3fc6a35019c3599ff930 Mon Sep 17 00:00:00 2001
+From 70a047a92c2fd6b1f18b782a14e93ac355533b9f Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 16 Aug 2026 20:30:35 +0200
 Subject: [PATCH 1/5] media: dt-bindings: camss: Add qcom,milos-camss
