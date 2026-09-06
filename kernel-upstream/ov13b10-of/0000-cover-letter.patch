@@ -1,18 +1,17 @@
-From 55ea18314e21283912c9db544e628110061b67e8 Mon Sep 17 00:00:00 2001
+From 7465d29f38b2772d2b6858a4569e427eac11550a Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 23 Aug 2026 18:50:22 +0200
+Date: Sun, 6 Sep 2026 11:36:19 +0200
 Subject: [PATCH 0/3] *** SUBJECT HERE ***
 
 *** BLURB HERE ***
 
 Thomas Colliers (3):
-  media: dt-bindings: ovti,ov13b10: Add OmniVision OV13B10
+  media: dt-bindings: ovti,ov08x40: Add OV13B10
   media: ov13b10: Add OF match
   media: ov13b10: Report the active pixel array area
 
- .../bindings/media/i2c/ovti,ov13b10.yaml      | 112 ++++++++++++++++++
- MAINTAINERS                                   |   1 +
- drivers/media/i2c/ov13b10.c                   |  31 +++++
- 3 files changed, 144 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/media/i2c/ovti,ov13b10.yaml
+ .../bindings/media/i2c/ovti,ov08x40.yaml      | 96 ++++++++++++++++---
+ MAINTAINERS                                   |  1 +
+ drivers/media/i2c/ov13b10.c                   | 31 ++++++
+ 3 files changed, 116 insertions(+), 12 deletions(-)
 
