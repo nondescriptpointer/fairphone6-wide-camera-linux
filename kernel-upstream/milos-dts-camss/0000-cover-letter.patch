@@ -1,6 +1,6 @@
-From 3b8a39b0284babc682dced5548b48526cf727217 Mon Sep 17 00:00:00 2001
+From b09387b0a0f0f1707712ef41368d752b976e01da Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 6 Sep 2026 12:04:52 +0200
+Date: Sun, 6 Sep 2026 12:15:16 +0200
 Subject: [PATCH 0/2] *** SUBJECT HERE ***
 
 *** BLURB HERE ***
@@ -10,6 +10,6 @@ Thomas Colliers (2):
   arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide camera
 
  .../boot/dts/qcom/milos-fairphone-fp6.dts     |  60 +++++++++
- arch/arm64/boot/dts/qcom/milos.dtsi           | 123 ++++++++++++++++++
- 2 files changed, 183 insertions(+)
+ arch/arm64/boot/dts/qcom/milos.dtsi           | 116 ++++++++++++++++++
+ 2 files changed, 176 insertions(+)
 

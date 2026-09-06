@@ -1,4 +1,4 @@
-From 3b8a39b0284babc682dced5548b48526cf727217 Mon Sep 17 00:00:00 2001
+From b09387b0a0f0f1707712ef41368d752b976e01da Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 2/2] arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide
