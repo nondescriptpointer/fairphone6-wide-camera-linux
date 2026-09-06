@@ -1,4 +1,4 @@
-From 2e7624701fe6f70e6b343d7d51fc09d3d6202f58 Mon Sep 17 00:00:00 2001
+From 3b8a39b0284babc682dced5548b48526cf727217 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
 Subject: [PATCH 2/2] arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide
@@ -27,11 +27,11 @@ Assisted-by: pi:claude-opus-5
 Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../boot/dts/qcom/milos-fairphone-fp6.dts     | 62 ++++++++++++++++++-
- 1 file changed, 61 insertions(+), 1 deletion(-)
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     | 60 +++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index bb3b67e2fd01..2ef214730b58 100644
+index bb3b67e2fd01..5bc8abf4ea6c 100644
 --- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 +++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
 @@ -8,6 +8,7 @@
@@ -42,25 +42,41 @@ index bb3b67e2fd01..2ef214730b58 100644
  #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
  #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
  #include "milos.dtsi"
-@@ -561,7 +562,11 @@ eeprom@50 {
+@@ -541,6 +542,23 @@ vreg_l11f: ldo11 {
+ 	};
+ };
+ 
++&camss {
++	vdd-csiphy-0p9-supply = <&vreg_l2b>;
++	vdd-csiphy-1p2-supply = <&vreg_l4b>;
++
++	status = "okay";
++
++	ports {
++		port@1 {
++			csiphy1_ep: endpoint {
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&ov13b10_ep>;
++			};
++		};
++	};
++};
++
+ &cci0 {
+ 	status = "okay";
+ };
+@@ -561,7 +579,42 @@ eeprom@50 {
  
  &cci0_i2c1 {
  	/* Awinic AW86017 VCM @ 0x0c */
--	/* UW cam: OmniVision OV13B10 @ 0x36 */
 +	ov13b10_vcm: focus@c {
 +		compatible = "dongwoon,dw9714";
 +		reg = <0x0c>;
 +		vcc-supply = <&vreg_uw_afvdd_2p8>;
 +	};
- 
- 	eeprom@52 {
- 		compatible = "puya,p24c128f", "atmel,24c128";
-@@ -569,6 +574,54 @@ eeprom@52 {
- 		vcc-supply = <&vreg_l6p>;
- 		read-only;
- 	};
 +
-+	/* UW cam: OmniVision OV13B10 @ 0x36 */
+ 	/* UW cam: OmniVision OV13B10 @ 0x36 */
 +	camera@36 {
 +		compatible = "ovti,ov13b10";
 +		reg = <0x36>;
@@ -90,26 +106,9 @@ index bb3b67e2fd01..2ef214730b58 100644
 +			};
 +		};
 +	};
-+};
-+
-+&camss {
-+	vdd-csiphy-0p9-supply = <&vreg_l2b>;
-+	vdd-csiphy-1p2-supply = <&vreg_l4b>;
-+
-+	status = "okay";
-+
-+	ports {
-+		port@1 {
-+			csiphy1_ep: endpoint {
-+				data-lanes = <0 1 2 3>;
-+				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
-+				remote-endpoint = <&ov13b10_ep>;
-+			};
-+		};
-+	};
- };
  
- &cci1 {
+ 	eeprom@52 {
+ 		compatible = "puya,p24c128f", "atmel,24c128";
 @@ -834,6 +887,13 @@ &tlmm {
  			       <13 1>, /* NC */
  			       <63 2>; /* WLAN UART */
