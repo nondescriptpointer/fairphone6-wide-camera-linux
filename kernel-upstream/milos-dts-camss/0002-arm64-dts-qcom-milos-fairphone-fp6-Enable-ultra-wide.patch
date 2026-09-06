@@ -1,0 +1,126 @@
+From 2e7624701fe6f70e6b343d7d51fc09d3d6202f58 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Mon, 10 Aug 2026 22:37:17 +0200
+Subject: [PATCH 2/2] arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide
+ camera
+
+Enable the OV13B10 ultra-wide sensor and its focus VCM, and connect the
+sensor to CSIPHY1. Supply the CSIPHYs from vreg_l2b (0.9V) and vreg_l4b
+(1.2V), the same pair used for every CSIPHY in the vendor device tree.
+
+The exact actuator is not documented: the schematic only shows AFVDD,
+AF_GND and the shared CCI I2C bus entering the camera module, and the
+vendor DT uses a generic qcom,actuator node. The device responds to the
+DW9714 10-bit direct-DAC protocol used by the mainline driver, and focus
+control works, so use the dongwoon,dw9714 compatible.
+
+Pin assignments are taken from the FP6 schematics: the sensor sits on
+CCI I2C bus 1 with four D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
+CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
+and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN). The 2.8V
+AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
+
+Keep the sensor's reset pinctrl state in the board description alongside
+its wiring, rather than in the common Milos SoC include.
+
+Assisted-by: pi:claude-opus-5
+Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
+Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
+---
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     | 62 ++++++++++++++++++-
+ 1 file changed, 61 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
+index bb3b67e2fd01..2ef214730b58 100644
+--- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
++++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
+@@ -8,6 +8,7 @@
+ #define PMIV0104_SID 7
+ 
+ #include <dt-bindings/leds/common.h>
++#include <dt-bindings/media/video-interfaces.h>
+ #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include "milos.dtsi"
+@@ -561,7 +562,11 @@ eeprom@50 {
+ 
+ &cci0_i2c1 {
+ 	/* Awinic AW86017 VCM @ 0x0c */
+-	/* UW cam: OmniVision OV13B10 @ 0x36 */
++	ov13b10_vcm: focus@c {
++		compatible = "dongwoon,dw9714";
++		reg = <0x0c>;
++		vcc-supply = <&vreg_uw_afvdd_2p8>;
++	};
+ 
+ 	eeprom@52 {
+ 		compatible = "puya,p24c128f", "atmel,24c128";
+@@ -569,6 +574,54 @@ eeprom@52 {
+ 		vcc-supply = <&vreg_l6p>;
+ 		read-only;
+ 	};
++
++	/* UW cam: OmniVision OV13B10 @ 0x36 */
++	camera@36 {
++		compatible = "ovti,ov13b10";
++		reg = <0x36>;
++
++		clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
++		assigned-clock-rates = <19200000>;
++
++		avdd-supply = <&vreg_l4p>;
++		dovdd-supply = <&vreg_l6p>;
++		dvdd-supply = <&vreg_uw_dvdd>;
++
++		reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&cam_mclk1_default &ov13b10_reset_default>;
++
++		orientation = <1>;
++		rotation = <270>;
++
++		lens-focus = <&ov13b10_vcm>;
++
++		port {
++			ov13b10_ep: endpoint {
++				remote-endpoint = <&csiphy1_ep>;
++				data-lanes = <0 1 2 3>;
++				link-frequencies = /bits/ 64 <560000000>;
++			};
++		};
++	};
++};
++
++&camss {
++	vdd-csiphy-0p9-supply = <&vreg_l2b>;
++	vdd-csiphy-1p2-supply = <&vreg_l4b>;
++
++	status = "okay";
++
++	ports {
++		port@1 {
++			csiphy1_ep: endpoint {
++				data-lanes = <0 1 2 3>;
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				remote-endpoint = <&ov13b10_ep>;
++			};
++		};
++	};
+ };
+ 
+ &cci1 {
+@@ -834,6 +887,13 @@ &tlmm {
+ 			       <13 1>, /* NC */
+ 			       <63 2>; /* WLAN UART */
+ 
++	ov13b10_reset_default: ov13b10-reset-default-state {
++		pins = "gpio41";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
+ 	sdc2_card_det_n: sdc2-card-det-state {
+ 		pins = "gpio65";
+ 		function = "gpio";

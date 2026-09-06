@@ -1,0 +1,15 @@
+From 2e7624701fe6f70e6b343d7d51fc09d3d6202f58 Mon Sep 17 00:00:00 2001
+From: Thomas Colliers <mail@thomascolliers.com>
+Date: Sun, 6 Sep 2026 11:57:48 +0200
+Subject: [PATCH 0/2] *** SUBJECT HERE ***
+
+*** BLURB HERE ***
+
+Thomas Colliers (2):
+  arm64: dts: qcom: milos: Add CAMSS
+  arm64: dts: qcom: milos-fairphone-fp6: Enable ultra-wide camera
+
+ .../boot/dts/qcom/milos-fairphone-fp6.dts     |  62 ++++++++-
+ arch/arm64/boot/dts/qcom/milos.dtsi           | 123 ++++++++++++++++++
+ 2 files changed, 184 insertions(+), 1 deletion(-)
+

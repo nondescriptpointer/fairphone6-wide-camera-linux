@@ -1,120 +1,26 @@
-From 9c052f749f4b1b7aeb6a1da9ff246d495d0024b9 Mon Sep 17 00:00:00 2001
+From 3ed265e6f0f439cfb6eba3cdfedb7f9813a8d80b Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Mon, 10 Aug 2026 22:37:17 +0200
-Subject: [PATCH] arm64: dts: qcom: milos: Add CAMSS and FP6 ultra-wide camera
+Subject: [PATCH 1/2] arm64: dts: qcom: milos: Add CAMSS
 
-Add the camss@ac13000 node (regs, IRQs, clocks, interconnects, IOMMUs,
-GDSC, CSI ports) and MCLK1/reset pinctrl to milos.dtsi. The CSI ports
-carry only their reg in the SoC file; the endpoint belongs to whichever
-board wires a sensor up.
+Add the camss@ac13000 node with its register regions, interrupts, clocks,
+interconnects, IOMMUs and power domain. Describe the four CSI input ports
+and the generic MCLK1 pin configurations.
 
-On the Fairphone 6 enable the OV13B10 ultra-wide sensor and its focus
-VCM, and hook the sensor to CSIPHY1. The CSIPHYs are supplied by
-vreg_l2b (0.9V) and vreg_l4b (1.2V), the same pair the vendor device
-tree uses for every CSIPHY on this SoC.
-
-The exact actuator is not documented: the schematic only shows AFVDD,
-AF_GND and the shared CCI I2C bus entering the camera module, and the
-vendor DT uses a generic qcom,actuator node. The device responds to the
-DW9714 10-bit direct-DAC protocol used by the mainline driver, and
-focus control works, so using the dongwoon,dw9714 compatible.
-
-Pin assignments are taken from the FP6 schematics: the sensor sits on
-CCI I2C bus 1 with 4 D-PHY lanes on CSIPHY1, MCLK1 on GPIO 84,
-CAM1_RST_N on GPIO 41, AVDD from VREG_L4P_2P8, IOVDD from VREG_L6P_1P8
-and DVDD from an on-board LDO gated by GPIO 28 (UW_DVDD_EN); the 2.8V
-AF rail is gated by GPIO 23 (UW_AFVDD_2P8_EN).
+Leave CAMSS disabled and the ports without endpoints. Boards provide the
+CSIPHY supplies and sensor connections when enabling the subsystem. Keep
+sensor-specific wiring out of the SoC description so it can be reused by
+other Milos camera configurations.
 
 Assisted-by: pi:claude-opus-5
 Suggested-by: Jorijn van der Graaf <jorijnvdgraaf@catcrafts.net>
 Signed-off-by: Thomas Colliers <mail@thomascolliers.com>
 ---
- .../boot/dts/qcom/milos-fairphone-fp6.dts     |  55 +++++++-
- arch/arm64/boot/dts/qcom/milos.dtsi           | 130 ++++++++++++++++++
- 2 files changed, 184 insertions(+), 1 deletion(-)
+ arch/arm64/boot/dts/qcom/milos.dtsi | 123 ++++++++++++++++++++++++++++
+ 1 file changed, 123 insertions(+)
 
-diff --git a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-index bb3b67e2fd01..355c218a0c27 100644
---- a/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-+++ b/arch/arm64/boot/dts/qcom/milos-fairphone-fp6.dts
-@@ -8,6 +8,7 @@
- #define PMIV0104_SID 7
- 
- #include <dt-bindings/leds/common.h>
-+#include <dt-bindings/media/video-interfaces.h>
- #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
- #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
- #include "milos.dtsi"
-@@ -561,7 +562,11 @@ eeprom@50 {
- 
- &cci0_i2c1 {
- 	/* Awinic AW86017 VCM @ 0x0c */
--	/* UW cam: OmniVision OV13B10 @ 0x36 */
-+	ov13b10_vcm: focus@c {
-+		compatible = "dongwoon,dw9714";
-+		reg = <0x0c>;
-+		vcc-supply = <&vreg_uw_afvdd_2p8>;
-+	};
- 
- 	eeprom@52 {
- 		compatible = "puya,p24c128f", "atmel,24c128";
-@@ -569,6 +574,54 @@ eeprom@52 {
- 		vcc-supply = <&vreg_l6p>;
- 		read-only;
- 	};
-+
-+	/* UW cam: OmniVision OV13B10 @ 0x36 */
-+	camera@36 {
-+		compatible = "ovti,ov13b10";
-+		reg = <0x36>;
-+
-+		clocks = <&camcc CAM_CC_MCLK1_CLK>;
-+		assigned-clocks = <&camcc CAM_CC_MCLK1_CLK>;
-+		assigned-clock-rates = <19200000>;
-+
-+		avdd-supply = <&vreg_l4p>;
-+		dovdd-supply = <&vreg_l6p>;
-+		dvdd-supply = <&vreg_uw_dvdd>;
-+
-+		reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&cam_mclk1_default &ov13b10_reset_default>;
-+
-+		orientation = <1>;
-+		rotation = <270>;
-+
-+		lens-focus = <&ov13b10_vcm>;
-+
-+		port {
-+			ov13b10_ep: endpoint {
-+				remote-endpoint = <&csiphy1_ep>;
-+				data-lanes = <0 1 2 3>;
-+				link-frequencies = /bits/ 64 <560000000>;
-+			};
-+		};
-+	};
-+};
-+
-+&camss {
-+	vdd-csiphy-0p9-supply = <&vreg_l2b>;
-+	vdd-csiphy-1p2-supply = <&vreg_l4b>;
-+
-+	status = "okay";
-+
-+	ports {
-+		port@1 {
-+			csiphy1_ep: endpoint {
-+				data-lanes = <0 1 2 3>;
-+				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
-+				remote-endpoint = <&ov13b10_ep>;
-+			};
-+		};
-+	};
- };
- 
- &cci1 {
 diff --git a/arch/arm64/boot/dts/qcom/milos.dtsi b/arch/arm64/boot/dts/qcom/milos.dtsi
-index aad8bf678916..e58de92210bd 100644
+index aad8bf678916..72ca2b4c21d2 100644
 --- a/arch/arm64/boot/dts/qcom/milos.dtsi
 +++ b/arch/arm64/boot/dts/qcom/milos.dtsi
 @@ -1954,6 +1954,115 @@ videocc: clock-controller@aaf0000 {
@@ -233,7 +139,7 @@ index aad8bf678916..e58de92210bd 100644
  		cci0: cci@ac15000 {
  			compatible = "qcom,milos-cci", "qcom,msm8996-cci";
  			reg = <0x0 0x0ac15000 0x0 0x1000>;
-@@ -2474,6 +2583,27 @@ data-pins {
+@@ -2474,6 +2583,20 @@ data-pins {
  				};
  			};
  
@@ -249,13 +155,6 @@ index aad8bf678916..e58de92210bd 100644
 +				function = "cam_mclk";
 +				drive-strength = <2>;
 +				bias-pull-down;
-+			};
-+
-+			ov13b10_reset_default: ov13b10-reset-default-state {
-+				pins = "gpio41";
-+				function = "gpio";
-+				drive-strength = <2>;
-+				bias-disable;
 +			};
 +
  			cci0_0_default: cci0-0-default-state {
