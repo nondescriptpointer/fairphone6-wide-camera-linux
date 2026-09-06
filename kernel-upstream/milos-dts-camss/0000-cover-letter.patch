@@ -1,9 +1,51 @@
 From 82fda69f3a4806b88fd049ef88093089079a82c3 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 6 Sep 2026 12:52:42 +0200
-Subject: [PATCH 0/2] *** SUBJECT HERE ***
+Date: Sun, 6 Sep 2026 13:51:26 +0200
+Subject: [PATCH 0/2] arm64: dts: qcom: Add Milos CAMSS and FP6 ultra-wide
+ camera support
 
-*** BLURB HERE ***
+This DTS-only series adds the Milos camera subsystem and enables the
+Fairphone 6 ultra-wide camera.
+
+Patch 1 provides the reusable SoC description: CAMSS resources, four CSI
+input ports and the default MCLK1 pin configuration. CAMSS remains
+disabled, with supply connections and sensor endpoints left to the board.
+
+Patch 2 enables the FP6 OV13B10 and focus VCM, connects the sensor to
+CSIPHY1, and supplies the board-specific power and pin configuration. The
+OV13B10 reset state belongs to the FP6 board, not the common SoC include.
+Sensor data lanes are numbered 1 through 4; the CSIPHY endpoint retains
+its hardware lane indices 0 through 3. No unused MCLK1 sleep state or
+unrelated camera support is introduced.
+
+Binding dependencies, submitted separately to the media tree:
+- Patch 1 requires "media: dt-bindings: camss: Add qcom,milos-camss".
+- Patch 2 additionally requires "media: dt-bindings: ovti,ov08x40: Add
+  OV13B10".
+- The DW9714 binding is already upstream.
+
+These patches apply to the Qualcomm tree at the base-commit below. The two
+new bindings they rely on are being merged via the media tree and are not
+duplicated here, so dtbs_check will report undocumented compatibles until
+those land; please coordinate the merge order. The CAMSS and OV13B10 driver
+series are also required for the camera to function.
+
+Host-side validation of the revision prepared on 2026-09-06:
+- W=1 DTB builds for Fairphone FP6 and Nothing Asteroids on the base and
+  after each patch; existing DTC warnings were unchanged.
+- CAMSS, OV13B10 and DW9714 schema checks with the prerequisite bindings,
+  including explicit compatible matching and topology checks.
+- Disabled, endpoint-free CAMSS at the SoC-only stage; sensor, lens and
+  reciprocal CSIPHY1 connection after the FP6 patch.
+- The FP6 patch left the Nothing Asteroids DTB byte-identical.
+- Strict checkpatch on both patches: no errors, warnings or checks.
+
+New upstream clock-controller power-domain and required-OPP properties
+are retained. Earlier temporary Milos 7.2 testing exercised the camera
+path, but used the historical DTS revision, including its old sensor
+lane numbering. It is not boot validation of this updated DTS/base.
+
+Thanks to Jorijn van der Graaf for the suggestions reflected in both patches.
 
 Thomas Colliers (2):
   arm64: dts: qcom: milos: Add CAMSS
@@ -13,3 +55,5 @@ Thomas Colliers (2):
  arch/arm64/boot/dts/qcom/milos.dtsi           | 116 ++++++++++++++++++
  2 files changed, 176 insertions(+)
 
+
+base-commit: ba20122d4c311bd9384f38e7ba1d0c122e21745d

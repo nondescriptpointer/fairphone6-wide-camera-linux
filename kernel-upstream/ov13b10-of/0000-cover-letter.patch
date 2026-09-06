@@ -1,9 +1,42 @@
 From 8fd452c692ef6f23966f3959a94bc8275cca14f5 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 6 Sep 2026 12:52:42 +0200
-Subject: [PATCH 0/3] *** SUBJECT HERE ***
+Date: Sun, 6 Sep 2026 13:51:26 +0200
+Subject: [PATCH 0/3] media: ov13b10: Add Device Tree support and active array
+ reporting
+Cc: Antoine Bernard <zalnir@proton.me>
 
-*** BLURB HERE ***
+This series enables the existing OV13B10 driver to match Device Tree
+systems and reports the active pixel array area. It is used with the
+separate CAMSS and DTS series for the Fairphone 6 ultra-wide camera.
+
+Patch 1 extends ovti,ov08x40.yaml instead of introducing another binding
+with the same hardware properties. OV13B10 is a separate compatible, not
+a fallback to OV08X40. Its three supplies, populated endpoint and 560 MHz
+link frequency are required, while reset remains optional. Both sensors
+use the existing one-based two- or four-data-lane constraints, and the
+existing OV08X40 requirements are preserved.
+
+Patch 2 adds the OF match table without changing the ACPI match path.
+Patch 3 implements CROP_BOUNDS and CROP_DEFAULT for the documented
+4208x3120 active area. Per-mode CROP and NATIVE_SIZE are deliberately
+left unimplemented rather than publishing unverified geometry.
+
+Antoine Bernard previously submitted OV13B10 Device Tree support for the
+Xiaomi Pad 6. The shared binding follows the review request on that work:
+https://lore.kernel.org/r/10d6863d-7c66-47ad-a683-251f2a40af66@kernel.org/
+Antoine is copied here to coordinate the overlapping binding/OF support.
+The three-regulator support by Arun T is already in the upstream base
+and is not reimplemented by this series.
+
+Host-side checks of the revision prepared on 2026-09-06 included ARM64
+Clang W=1 driver builds with OF enabled, both with and without ACPI,
+focused binding checks, both compiled examples, and 66 positive/negative
+schema fixtures. Earlier temporary Milos 7.2 boot tests exercised the
+sensor's six modes on FP6; the refreshed upstream base has not itself
+been boot-tested. Full V4L2 API compliance and image-quality calibration
+are not claimed by this enablement series.
+
+Thanks to Jorijn van der Graaf for the suggestion reflected in patch 3.
 
 Thomas Colliers (3):
   media: dt-bindings: ovti,ov08x40: Add OV13B10
@@ -15,3 +48,5 @@ Thomas Colliers (3):
  drivers/media/i2c/ov13b10.c                   | 31 ++++++++
  3 files changed, 103 insertions(+), 4 deletions(-)
 
+
+base-commit: f9536a8065d9eed0d9114878c56ffc4e5a18bdfc

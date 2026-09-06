@@ -2,6 +2,7 @@ From 1d904a6d2466554a3141bf4a726774ccb88e87b9 Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
 Date: Sun, 23 Aug 2026 18:46:42 +0200
 Subject: [PATCH 2/3] media: ov13b10: Add OF match
+Cc: Antoine Bernard <zalnir@proton.me>
 
 The driver only matches on ACPI, so it cannot probe on Device Tree
 platforms. Add an OF device ID table for the ovti,ov13b10 compatible.

@@ -1,9 +1,36 @@
 From d0738ba2b9f6ccee5806eba7318b8174c68aa57f Mon Sep 17 00:00:00 2001
 From: Thomas Colliers <mail@thomascolliers.com>
-Date: Sun, 6 Sep 2026 12:52:42 +0200
-Subject: [PATCH 0/5] *** SUBJECT HERE ***
+Date: Sun, 6 Sep 2026 13:51:26 +0200
+Subject: [PATCH 0/5] media: qcom: camss: Add Milos camera subsystem support
 
-*** BLURB HERE ***
+This series adds RDI capture support for the Qualcomm Milos (SM7635)
+camera subsystem, as used by the Fairphone 6.
+
+The hardware has four CSIPHYs, three CSIDs and three TFE665 instances.
+Rather than duplicating the VFE-340 driver, the series introduces variant
+data for the BUS offset, RDI packer format and write-master count. The
+existing TFE530 keeps its previous values; TFE665 selects its own values
+and the existing 16-byte bytesperline alignment.
+
+The remaining patches document qcom,milos-camss, add the CSIPHY v2.2.1
+D-PHY register sequence and describe the SM7635 resources, including
+per-PHY regulator loads. Only the three RDI lines per TFE are exposed.
+The TFE665 PIX pipeline differs from TFE530 and is not enabled here.
+C-PHY support and the other FP6 cameras are outside this series.
+
+The OV13B10 binding/driver additions and Milos/FP6 DTS changes are sent as
+separate series. They are needed together for the FP6 ultra-wide capture
+path, but are not prerequisites for applying these CAMSS patches.
+
+Testing of the earlier enablement revision on a temporary Milos 7.2
+kernel included all six OV13B10 modes, nine matching CSID/VFE/RDI routes,
+start/stop and module reload cycles, and a 9,600-frame full-resolution
+stress capture. This is not a claim of boot testing the current upstream
+base. Host-side checks of the revision prepared on 2026-09-06 included an
+ARM64 Clang W=1 CAMSS object build and focused binding/example validation.
+
+Thanks to Jorijn van der Graaf for the suggestions reflected in the
+individual patches.
 
 Thomas Colliers (5):
   media: dt-bindings: camss: Add qcom,milos-camss
@@ -21,3 +48,5 @@ Thomas Colliers (5):
  6 files changed, 736 insertions(+), 47 deletions(-)
  create mode 100644 Documentation/devicetree/bindings/media/qcom,milos-camss.yaml
 
+
+base-commit: f9536a8065d9eed0d9114878c56ffc4e5a18bdfc
